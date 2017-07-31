@@ -83,13 +83,20 @@ function onColorUpdate(e) {
     canvas.current.color = e.target.className.split(' ')[1];
 }
 
-function loadCanvas() {
+function loadCanvas(el) {
+
+    canvas.self = el;
+    canvas.context = canvas.self.getContext('2d');
+
     var colors = document.getElementsByClassName('color');
 
     for (var i = 0; i < colors.length; i++) {
         colors[i].addEventListener('click', onColorUpdate, false);
     }
 
+
+    canvas.mouseXOffset = canvas.self.getBoundingClientRect().left;
+    canvas.mouseYOffset = canvas.self.getBoundingClientRect().top;
     canvas.self.height = canvas.self.offsetHeight;
     canvas.self.width = canvas.self.offsetWidth;
 
