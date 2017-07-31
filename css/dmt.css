@@ -1,0 +1,84 @@
+body, html {
+    margin:0;
+    padding:0
+}
+
+* {
+    margin:0;
+    padding:0;
+}
+
+#top, #bottom {
+    height:10%;
+    width:100%;
+}
+
+#mid {
+    height:80%;
+    border:1px solid red;
+    width:100%;
+}
+
+#toolbarContainer, #canvasContainer, #chatContainer {
+    float:left;
+    height:100%;
+    border:1px solid blue;
+}
+
+#toolbarContainer {
+    width:20%;
+}
+
+#iconContainer, .infoBox{
+    margin:5%;
+    padding:5%;
+    border:1px solid red;
+}
+
+.icon {
+    width:45%;
+    height:5%;
+    margin:1%;
+    border:1px solid black;
+    display: inline-block;
+
+    text-align: center;
+    font-size:1.5vw;
+}
+
+.color.black { background-color: black; }
+.color.red { background-color: red; }
+.color.green { background-color: green; }
+.color.blue { background-color: blue; }
+.color.yellow { background-color: yellow; }
+.color.white { background-color: white; }
+
+.infoBox p {
+    text-align: center;
+    font-size:2vw;
+}
+
+#canvasContainer{
+    width:60%;
+}
+
+#canvas {
+    height:100%;
+    width:100%;
+}
+
+#chatContainer {
+    width:20%;
+    height:100%;
+}
+
+#chat {
+    width: 100%;
+    height: 80%;
+    overflow-y: scroll;
+
+}
+
+#chatInput {
+    width: 100%;
+}

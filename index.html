@@ -1,5 +1,5 @@
 <html>
- 
+
 <head>
     <meta http-equiv="cache-control" content="max-age=0" />
     <meta http-equiv="cache-control" content="no-cache" />
@@ -8,7 +8,7 @@
     <meta http-equiv="pragma" content="no-cache" />
 
     <title>DRAW MA THANG</title>
- 
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
         crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
@@ -23,13 +23,59 @@
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.slim.js"></script>
 
-    <script type="text/javascript" src="js/canvas.js"></script>
-    <script type="text/javascript" src="js/main.js"></script>
+   <script type="text/javascript" src="js/canvas.js"></script>
+   <script type="text/javascript" src="js/main.js"></script>
 
 </head>
 
 <body>
-    
+
+    <div id="containeer">
+        <div id="top">
+
+        </div>
+        <div id="mid">
+            <div id="toolbarContainer">
+                <div id="iconContainer">
+                    <div class="icon color black"></div>
+                    <div class="icon color red"></div>
+                    <div class="icon color white"></div>
+                    <div class="icon color green"></div>
+                    <div class="icon color blue"></div>
+                    <div class="icon color yellow"></div>
+                    <div class="icon color minus">-</div>
+                    <div class="icon color plus">+</div>
+                </div>
+
+                <div class="infoBox">
+                    <p id="word">S U P E R M A N</p>
+                </div>
+                <div class="infoBox">
+                    <p id="timer">69s</p>
+                </div>
+            </div>
+
+            <div id="canvasContainer">
+                <canvas id="canvas"></canvas>
+            </div>
+
+            <div id="chatContainer">
+                <div id="usersOnline"></div>
+                <div id="chat">
+                    <ul id="chatScroller">
+                    </ul>
+                </div>
+
+                <form action="" id="chatInputForm" autocomplete="off">
+                    <input type="text" id="chatInput" placeholder="Enter A Username" />
+                </form>
+            </div>
+        </div>
+        <div id="bottom">
+
+        </div>
+    </div>
+    <!--
     <div id="DRAW" class="screen">
         <canvas id="CANVAS"></canvas>
         <div class="colors">
@@ -53,7 +99,9 @@
         <form action="" id="chatInputForm" autocomplete="off">
             <input type="text" id="chatInput" placeholder="Enter A Username" />
         </form>
-    </div> -->
+    </div>
+
+    -->
 </body>
 
 </html>
