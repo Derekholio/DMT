@@ -1,0 +1,81 @@
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+}
+
+#chat {
+    width: 100%;
+    height: 300px;
+    overflow-y: scroll;
+    border: 1px solid blue;
+}
+
+#chatContainer {
+    position:absolute;
+    right:2%;
+    top:5%;
+    width:17.5%;
+    height:30%;
+    aborder:1px solid red;
+
+}
+
+#chatInput {
+    width: 100%;
+}
+
+#remote {
+    border: 1px solid green;
+    width: 17.5%;
+    position:absolute;
+    right:2%;
+    bottom:10%;
+}
+
+#nana {
+    border: 5px groove purple;
+    width: 200px;
+    height: 200px;
+    display: none;
+}
+
+.screen,
+#glass {
+    aheight: 390px;
+    awidth: 640px;
+    aposition: absolute;
+    border: 1px solid yellow;
+    width: 73%;
+    height: 78%;
+    position: absolute;
+    top: 8%;
+    left: 4%;
+    overflow:hidden;
+}
+
+#CANVAS {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.colors {
+  position: relative;
+  left:10%;
+  width:180px;
+}
+
+.color {
+  display: inline-block;
+  height: 10%;
+  width: 30px;
+}
+
+.color.black { background-color: black; }
+.color.red { background-color: red; }
+.color.green { background-color: green; }
+.color.blue { background-color: blue; }
+.color.yellow { background-color: yellow; }
