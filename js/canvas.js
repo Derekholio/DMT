@@ -9,11 +9,12 @@ var canvas = {
     },
 
     drawLine: function (x0, y0, x1, y1, color, emit) {
+        console.log(x0,y0,x1,y1,color);
         this.context.beginPath();
         this.context.moveTo(x0, y0);
         this.context.lineTo(x1, y1);
         this.context.strokeStyle = color;
-        this.context.lineWidth = 4;
+        //this.context.lineWidth = 4;
         this.context.stroke();
         this.context.closePath();
 
@@ -80,7 +81,15 @@ function onDrawingEvent(data) {
 }
 
 function onColorUpdate(e) {
-    canvas.current.color = e.target.className.split(' ')[1];
+    var tar = e.target.className.split(' ')[2];
+    console.log(tar);
+    if(tar == "plus"){
+        canvas.context.lineWidth += 2;
+    } else if (tar == "minus"){
+        canvas.context.lineWidth -= 2;
+    } else {
+        canvas.current.color = tar;
+    }
 }
 
 function loadCanvas(el) {
@@ -99,6 +108,8 @@ function loadCanvas(el) {
     canvas.mouseYOffset = canvas.self.getBoundingClientRect().top;
     canvas.self.height = canvas.self.offsetHeight;
     canvas.self.width = canvas.self.offsetWidth;
+
+    canvas.context.lineWidth = 4;
 
     canvas.self.addEventListener('mousedown', onMouseDown, false);
     canvas.self.addEventListener('mouseup', onMouseUp, false);

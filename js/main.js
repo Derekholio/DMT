@@ -59,7 +59,7 @@ socket.on('contentUpdate', function (content) {
 $(document).ready(function () {
 
     //Loads All Canvas Variables and EVents (DRAWING)
-    loadCanvas(document.getElementById("CANVAS"));
+    loadCanvas(document.getElementById("canvas"));
 
     //handles chat input
     $('#chatInputForm').submit(function () {
