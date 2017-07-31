@@ -17,17 +17,6 @@ socket.on("init", function (data) {
     console.log(username);
 });
 
-socket.on("playerAddedStart", function(players){
-    $("#playersToStart").html("");
-
-    players.forEach(function(player){
-        if(username == player.username){
-            $("#playersToStart").append('<li class="list-group-item list-group-item-success">'+player.username+'</li>');
-        } else {
-            $("#playersToStart").append('<li class="list-group-item">'+player.username+'</li>');
-        }
-    });
-});
 
 //listens if we get disconnected from server
 socket.on('disconnect', function () {
@@ -63,6 +52,19 @@ socket.on('contentUpdate', function (content) {
     canvas.history.forEach(function (item) {
         console.log("Drawing line");
         canvas.drawLine(item.x0, item.y0, item.x1, item.y1, item.color);
+    });
+});
+
+
+socket.on("playerAddedStart", function(players){
+    $("#playersToStart").html("");
+
+    players.forEach(function(player){
+        if(username == player.username){
+            $("#playersToStart").append('<li class="list-group-item list-group-item-success">'+player.username+'</li>');
+        } else {
+            $("#playersToStart").append('<li class="list-group-item">'+player.username+'</li>');
+        }
     });
 });
 

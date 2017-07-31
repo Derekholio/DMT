@@ -92,6 +92,10 @@ function onColorUpdate(e) {
     }
 }
 
+function onResize(){
+
+}
+
 function loadCanvas(el) {
 
     canvas.self = el;
@@ -115,6 +119,7 @@ function loadCanvas(el) {
     canvas.self.addEventListener('mouseup', onMouseUp, false);
     canvas.self.addEventListener('mouseout', onMouseUp, false);
     canvas.self.addEventListener('mousemove', throttle(onMouseMove, 10), false);
+    window.addEventListener("resize", onResize);
 
 
 }

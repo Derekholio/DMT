@@ -13,7 +13,7 @@ var drawHistory = [];
 var game = {
     inProgress: false,
     players: []
-}
+};
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
