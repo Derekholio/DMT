@@ -2,13 +2,18 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var Sentencer = require("sentencer");
 
 var port = process.env.PORT || 8080;
 
-//MTV2 Variables
+//DMT Variables
 var userCount = 0;
 var drawHistory = [];
 
+var game = {
+    inProgress: false,
+    players: []
+}
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
@@ -27,9 +32,25 @@ io.on('connection', function (socket) {
     console.log("connection established");
     userCount += 1;
 
-    io.emit('init', {
-        
+    var player = {
+        username: Sentencer.make("{{adjective}} {{noun}}"),
+        socket: socket.id,
+        isPlaying: false,
+        drawing: false
+    };
+
+    if(!game.inProgress) {
+        player.isPlaying = true;
+    }
+
+    game.players.push(player);
+
+    socket.emit('init', {
+       username: player.username 
     });
+
+    io.emit("playerAddedStart", game.players);
+
     //emits usercount to be displayed on page.  May replace with inital start payload
     io.emit('userCount', userCount);
 
@@ -42,7 +63,14 @@ io.on('connection', function (socket) {
     //on client disconnect.  Reemit usercount for client side
     socket.on('disconnect', function () {
         userCount -= 1;
-        io.emit('userCount', userCount);
+        
+        game.players.forEach(function(item, i){
+            if(item.socket == socket.id){
+                game.players.splice(i, 1);
+            }
+        });
+
+         io.emit("playerAddedStart", game.players);
     });
 
 

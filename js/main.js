@@ -1,6 +1,5 @@
 var socket = io("http://localhost:8080");
 var username = "Anonymous";
-var usernameSet = false;
 
 var userCount;
 
@@ -14,7 +13,20 @@ socket.on('drawing', onDrawingEvent);
 
 //listens for initial important data 
 socket.on("init", function (data) {
+    username = data.username;
+    console.log(username);
+});
 
+socket.on("playerAddedStart", function(players){
+    $("#playersToStart").html("");
+
+    players.forEach(function(player){
+        if(username == player.username){
+            $("#playersToStart").append('<li class="list-group-item list-group-item-success">'+player.username+'</li>');
+        } else {
+            $("#playersToStart").append('<li class="list-group-item">'+player.username+'</li>');
+        }
+    });
 });
 
 //listens if we get disconnected from server
