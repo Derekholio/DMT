@@ -15,6 +15,9 @@ socket.on('drawing', onDrawingEvent);
 socket.on("init", function (data) {
     username = data.username;
     console.log(username);
+    if(data.inProgress){
+        $(".modal").hide();
+    }
 });
 
 
@@ -43,7 +46,7 @@ socket.on('userCount', function (count) {
 socket.on('contentUpdate', function (content) {
     // screenSwitcher(content.type);
     //sets mouse0 to canvas0, due to margins
-    
+
     canvas.history = content.history;
 
     //set timeout because the resource has a load delay. if image error then erase.
@@ -56,38 +59,38 @@ socket.on('contentUpdate', function (content) {
 });
 
 
-socket.on("playerAddedStart", function(players){
+socket.on("playerAddedStart", function (players) {
     $("#playersToStart").html("");
 
-    players.forEach(function(player){
-        if(username == player.username){
-            $("#playersToStart").append('<li class="list-group-item list-group-item-success">'+player.username+'</li>');
+    players.forEach(function (player) {
+        if (username == player.username) {
+            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + '</li>');
         } else {
-            $("#playersToStart").append('<li class="list-group-item">'+player.username+'</li>');
+            $("#playersToStart").append('<li class="list-group-item">' + player.username + '</li>');
         }
     });
 });
 
-socket.on("gameStarted", function(){
+socket.on("gameStarted", function () {
     $(".modal").hide();
     AddChatMessage("Game Starting!");
 });
 
-socket.on("nextTurnPlayer", function(data){
-    AddChatMessage("It's "+data.who+"'s turn to draw!");
+socket.on("nextTurnPlayer", function (data) {
+    AddChatMessage("It's " + data.who + "'s turn to draw!");
 
     notMyTurn(false);
 });
 
-socket.on("yourTurn", function(data){
+socket.on("yourTurn", function (data) {
     notMyTurn(true);
 });
 
-socket.on("wordUpdate", function(data){
+socket.on("wordUpdate", function (data) {
     $("#word").text(data);
 });
 
-socket.on("wordUpdateSolved", function(data){
+socket.on("wordUpdateSolved", function (data) {
     $("#wordSolved").text(data);
 
 });
@@ -99,28 +102,23 @@ $(document).ready(function () {
     loadCanvas(document.getElementById("canvas"));
 
     //handles chat input
-    $('#chatInputForm').submit(function () {
+    $('#chatInputForm').submit(function (event) {
+        event.preventDefault();
         var chatVal = $("#chatInput").val();
         $("#chatInput").val("");
 
-        if (usernameSet) {
+        if (chatVal.length > 0) {
             socket.emit('chatMessage', {
                 username: username,
-                text: username + ": " + chatVal
-            });
-        } else {
-            username = chatVal;
-            usernameSet = true;
-
-            socket.emit('chatMessage', {
-                username: username,
-                text: username + " has entered the chat!"
+                text: chatVal
             });
         }
+
+
         return false;
     });
 
-    $("#startGameButton").click(function(){
+    $("#startGameButton").click(function () {
         socket.emit("startGame");
     });
 
@@ -140,10 +138,10 @@ function screenSwitcher(screen) {
     $(".screen").hide();
 }
 
-function notMyTurn(turn){
+function notMyTurn(turn) {
     myTurn = turn;
-    
-    if(turn){
+
+    if (turn) {
         $(".turn").show();
     } else {
         $$(".turn").hide();

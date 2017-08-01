@@ -5,7 +5,7 @@ var canvas = {
     isDrawing: false,
 
     current: {
-        color: 'yellow',
+        color: 'black',
         lineWidth: 4
     },
 

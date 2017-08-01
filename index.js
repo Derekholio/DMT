@@ -44,15 +44,22 @@ io.on('connection', function (socket) {
         points: 0
     };
 
-    if(!game.inProgress) {
+    if (!game.inProgress) {
         player.isPlaying = true;
     }
 
     game.players.push(player);
 
-    socket.emit('init', {
-       username: player.username 
-    });
+    var initPayload = {
+        username: player.username,
+        inProgress: game.inProgress
+    };
+
+    if(game.inProgress){
+        socket.emit("wordUpdate", game.currentWord);
+    }
+
+    socket.emit('init', initPayload);
 
     io.emit("playerAddedStart", game.players);
 
@@ -63,26 +70,28 @@ io.on('connection', function (socket) {
     socket.on('chatMessage', function (msg) {
         console.log("Chat Message", msg);
 
+        if (msg.text.length > 0) {
+            msg.text = msg.username + ": " + msg.text;
 
-
-        io.emit('chatMessage', msg);
+            io.emit('chatMessage', msg);
+        }
     });
 
     //on client disconnect.  Reemit usercount for client side
     socket.on('disconnect', function () {
         userCount -= 1;
-        
-        game.players.forEach(function(item, i){
-            if(item.socket == socket.id){
+
+        game.players.forEach(function (item, i) {
+            if (item.socket == socket.id) {
                 game.players.splice(i, 1);
             }
         });
 
-         io.emit("playerAddedStart", game.players);
+        io.emit("playerAddedStart", game.players);
     });
 
 
-    socket.on('drawing', function(data) {
+    socket.on('drawing', function (data) {
         socket.broadcast.emit('drawing', data);
 
         drawHistory.push(data);
@@ -92,7 +101,7 @@ io.on('connection', function (socket) {
 
 }); // END IO.ON
 
-function startGame(event){
+function startGame(event) {
     console.log("starting Game!");
     game.inProgress = true;
 
@@ -109,36 +118,38 @@ function getTime() {
     return Math.floor(Date.now() / 1000);
 }
 
-function updatePlayerTurn(){
+function updatePlayerTurn() {
     game.currentTurn += 1;
 
-    
-    if(game.currentTurn >= game.players.length) {
+
+    if (game.currentTurn >= game.players.length) {
         endGame();
-    } else if(!game.players[game.currentTurn].isPlaying){
+    } else if (!game.players[game.currentTurn].isPlaying) {
         updatePlayerTurn();
     } else {
-        if(game.currentTurn > 0){
-            game.players[game.currentTurn-1].drawing = false;
+        if (game.currentTurn > 0) {
+            game.players[game.currentTurn - 1].drawing = false;
         }
 
         game.currentPlayer = game.players[game.currentTurn];
         game.currentPlayer.drawing = true;
 
-        io.emit("nextTurnPlayer", {who: game.currentPlayer.username});
+        io.emit("nextTurnPlayer", {
+            who: game.currentPlayer.username
+        });
         io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
     }
 }
 
-function endGame(){
+function endGame() {
     game.inProgress = false;
     io.emit("gameEnded");
 }
 
-function getNewWord(){
+function getNewWord() {
     game.currentWordSolved = Sentencer.make("{{noun}}");
 
-    for(x = 0; x <= game.currentWordSolved.length-1; x++){
-        game.currentWord += "_ ";
+    for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
+        game.currentWord += "_";
     }
 }

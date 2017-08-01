@@ -44,6 +44,7 @@ body, html {
 
     text-align: center;
     font-size:1.5vw;
+    
 }
 
 .color.black { background-color: black; }
@@ -56,6 +57,7 @@ body, html {
 .infoBox p {
     text-align: center;
     font-size:2vw;
+    letter-spacing: 5px;
 }
 
 .turn {
