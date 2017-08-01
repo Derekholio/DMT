@@ -56,7 +56,7 @@ io.on('connection', function (socket) {
     };
 
     if(game.inProgress){
-        socket.emit("wordUpdate", game.currentWord);
+        sendWordToClient();
     }
 
     socket.emit('init', initPayload);
@@ -71,9 +71,11 @@ io.on('connection', function (socket) {
         console.log("Chat Message", msg);
 
         if (msg.text.length > 0) {
+            doGuess(msg.text, msg.username);
             msg.text = msg.username + ": " + msg.text;
-
             io.emit('chatMessage', msg);
+
+            
         }
     });
 
@@ -109,7 +111,7 @@ function startGame(event) {
     updatePlayerTurn();
     getNewWord();
 
-    io.emit("wordUpdate", game.currentWord);
+    sendWordToClient();
     io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved);
 }
 
@@ -141,6 +143,32 @@ function updatePlayerTurn() {
     }
 }
 
+function doGuess(guess, username){
+    if(guess.length == 1){
+
+        for(var x = 0; x <= game.currentWordSolved.length; x++){
+            var c = game.currentWordSolved.charAt(x);
+
+            if(c == guess.toLowerCase()){
+
+                game.currentWord = game.currentWord.setCharAt(x, guess.toLowerCase());
+                sendWordToClient();
+            }
+        }
+
+
+
+    } else if(guess.length == game.currentWordSolved.length){
+        if(guess == game.currentWordSolved){
+            RoundWin(username);
+        }
+    }
+}
+
+function sendWordToClient(){
+    io.emit("wordUpdate", game.currentWord.toUpperCase());
+}
+
 function endGame() {
     game.inProgress = false;
     io.emit("gameEnded");
@@ -153,3 +181,9 @@ function getNewWord() {
         game.currentWord += "_";
     }
 }
+
+
+String.prototype.setCharAt = function(index,chr) {
+	if(index > this.length-1) return str;
+	return this.substr(0,index) + chr + this.substr(index+1);
+};

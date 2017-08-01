@@ -144,6 +144,6 @@ function notMyTurn(turn) {
     if (turn) {
         $(".turn").show();
     } else {
-        $$(".turn").hide();
+        $(".turn").hide();
     }
 }
