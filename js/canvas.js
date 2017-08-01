@@ -5,31 +5,33 @@ var canvas = {
     isDrawing: false,
 
     current: {
-        color: 'yellow'
+        color: 'yellow',
+        lineWidth: 4
     },
 
-    drawLine: function (x0, y0, x1, y1, color, emit) {
-        console.log(x0,y0,x1,y1,color);
+    drawLine: function (x0, y0, x1, y1, color, lineWidth, emit = false) {
+        console.log(x0, y0, x1, y1, color);
         this.context.beginPath();
         this.context.moveTo(x0, y0);
         this.context.lineTo(x1, y1);
         this.context.strokeStyle = color;
-        //this.context.lineWidth = 4;
+        this.context.lineWidth = lineWidth;
         this.context.stroke();
         this.context.closePath();
 
         if (!emit) {
             return;
         }
-        var w = 1;//this.self.width;
-        var h = 1;//this.self.height;
+        var w = 1; //this.self.width;
+        var h = 1; //this.self.height;
 
         socket.emit('drawing', {
             x0: x0 / w,
             y0: y0 / h,
             x1: x1 / w,
             y1: y1 / h,
-            color: color
+            color: color,
+            lineWidth: lineWidth
         });
     }
 
@@ -52,47 +54,59 @@ function throttle(callback, delay) {
 
 
 function onMouseDown(e) {
+    if (!myTurn) {
+        AddChatMessage("Its not your Turn!");
+        return;
+    }
     canvas.isDrawing = true;
     canvas.current.x = e.clientX;
     canvas.current.y = e.clientY;
 }
 
 function onMouseUp(e) {
+    if (!myTurn) {
+        return;
+    }
+
     if (!canvas.isDrawing) {
         return;
     }
     canvas.isDrawing = false;
-    canvas.drawLine(canvas.current.x, canvas.current.y, e.clientX, e.clientY, canvas.current.color, true);
+    canvas.drawLine(canvas.current.x, canvas.current.y, e.clientX, e.clientY, canvas.current.color, canvas.current.lineWidth, true);
 }
 
 function onMouseMove(e) {
+    if (!myTurn) {
+        return;
+    }
+
     if (!canvas.isDrawing) {
         return;
     }
-    canvas.drawLine(canvas.current.x - canvas.mouseXOffset, canvas.current.y - canvas.mouseYOffset, e.clientX - canvas.mouseXOffset, e.clientY - canvas.mouseYOffset, canvas.current.color, true);
+    canvas.drawLine(canvas.current.x - canvas.mouseXOffset, canvas.current.y - canvas.mouseYOffset, e.clientX - canvas.mouseXOffset, e.clientY - canvas.mouseYOffset, canvas.current.color, canvas.current.lineWidth, true);
     canvas.current.x = e.clientX;
     canvas.current.y = e.clientY;
 }
 
 function onDrawingEvent(data) {
-    var w = 1;//canvas.self.width;
-    var h = 1;//canvas.self.height;
-    canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color);
+    var w = 1; //canvas.self.width;
+    var h = 1; //canvas.self.height;
+    canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
 }
 
 function onColorUpdate(e) {
     var tar = e.target.className.split(' ')[2];
     console.log(tar);
-    if(tar == "plus"){
-        canvas.context.lineWidth += 2;
-    } else if (tar == "minus"){
-        canvas.context.lineWidth -= 2;
+    if (tar == "plus") {
+        canvas.current.lineWidth += 2;
+    } else if (tar == "minus") {
+        canvas.current.lineWidth -= 2;
     } else {
         canvas.current.color = tar;
     }
 }
 
-function onResize(){
+function onResize() {
 
 }
 
@@ -113,12 +127,12 @@ function loadCanvas(el) {
     canvas.self.height = canvas.self.offsetHeight;
     canvas.self.width = canvas.self.offsetWidth;
 
-    canvas.context.lineWidth = 4;
+    canvas.current.lineWidth = 4;
 
     canvas.self.addEventListener('mousedown', onMouseDown, false);
     canvas.self.addEventListener('mouseup', onMouseUp, false);
     canvas.self.addEventListener('mouseout', onMouseUp, false);
-    canvas.self.addEventListener('mousemove', throttle(onMouseMove, 10), false);
+    canvas.self.addEventListener('mousemove', throttle(onMouseMove, 0), false);
     window.addEventListener("resize", onResize);
 
 

@@ -15,8 +15,8 @@ var game = {
     players: [],
     currentTurn: -1,
     currentPlayer: null,
-    currentWord: null,
-    currentWordSolved: null
+    currentWord: "",
+    currentWordSolved: ""
 };
 
 //HAndles Node server web page serving.  Currently Not used.
@@ -138,7 +138,7 @@ function endGame(){
 function getNewWord(){
     game.currentWordSolved = Sentencer.make("{{noun}}");
 
-    for(x = 0; x <= game.currentWordSolved.length; x++){
+    for(x = 0; x <= game.currentWordSolved.length-1; x++){
         game.currentWord += "_ ";
     }
 }

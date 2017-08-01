@@ -1,6 +1,6 @@
 var socket = io("http://localhost:8080");
 var username = "Anonymous";
-
+var myTurn = false;
 var userCount;
 
 
@@ -140,6 +140,12 @@ function screenSwitcher(screen) {
     $(".screen").hide();
 }
 
-function notMyTurn(isIt){
-
+function notMyTurn(turn){
+    myTurn = turn;
+    
+    if(turn){
+        $(".turn").show();
+    } else {
+        $$(".turn").hide();
+    }
 }

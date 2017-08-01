@@ -58,6 +58,10 @@ body, html {
     font-size:2vw;
 }
 
+.turn {
+    display:none;
+}
+
 #canvasContainer{
     width:60%;
 }
