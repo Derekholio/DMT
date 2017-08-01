@@ -12,7 +12,11 @@ var drawHistory = [];
 
 var game = {
     inProgress: false,
-    players: []
+    players: [],
+    currentTurn: -1,
+    currentPlayer: null,
+    currentWord: null,
+    currentWordSolved: null
 };
 
 //HAndles Node server web page serving.  Currently Not used.
@@ -36,7 +40,8 @@ io.on('connection', function (socket) {
         username: Sentencer.make("{{adjective}} {{noun}}"),
         socket: socket.id,
         isPlaying: false,
-        drawing: false
+        drawing: false,
+        points: 0
     };
 
     if(!game.inProgress) {
@@ -57,6 +62,9 @@ io.on('connection', function (socket) {
     //on message from chat
     socket.on('chatMessage', function (msg) {
         console.log("Chat Message", msg);
+
+
+
         io.emit('chatMessage', msg);
     });
 
@@ -80,9 +88,57 @@ io.on('connection', function (socket) {
         drawHistory.push(data);
     });
 
+    socket.on("startGame", startGame);
+
 }); // END IO.ON
+
+function startGame(event){
+    console.log("starting Game!");
+    game.inProgress = true;
+
+    io.emit("gameStarted");
+    updatePlayerTurn();
+    getNewWord();
+
+    io.emit("wordUpdate", game.currentWord);
+    io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved);
+}
 
 //Returns Time in Seconds
 function getTime() {
     return Math.floor(Date.now() / 1000);
+}
+
+function updatePlayerTurn(){
+    game.currentTurn += 1;
+
+    
+    if(game.currentTurn >= game.players.length) {
+        endGame();
+    } else if(!game.players[game.currentTurn].isPlaying){
+        updatePlayerTurn();
+    } else {
+        if(game.currentTurn > 0){
+            game.players[game.currentTurn-1].drawing = false;
+        }
+
+        game.currentPlayer = game.players[game.currentTurn];
+        game.currentPlayer.drawing = true;
+
+        io.emit("nextTurnPlayer", {who: game.currentPlayer.username});
+        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
+    }
+}
+
+function endGame(){
+    game.inProgress = false;
+    io.emit("gameEnded");
+}
+
+function getNewWord(){
+    game.currentWordSolved = Sentencer.make("{{noun}}");
+
+    for(x = 0; x <= game.currentWordSolved.length; x++){
+        game.currentWord += "_ ";
+    }
 }

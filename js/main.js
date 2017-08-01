@@ -68,6 +68,29 @@ socket.on("playerAddedStart", function(players){
     });
 });
 
+socket.on("gameStarted", function(){
+    $(".modal").hide();
+    AddChatMessage("Game Starting!");
+});
+
+socket.on("nextTurnPlayer", function(data){
+    AddChatMessage("It's "+data.who+"'s turn to draw!");
+
+    notMyTurn(false);
+});
+
+socket.on("yourTurn", function(data){
+    notMyTurn(true);
+});
+
+socket.on("wordUpdate", function(data){
+    $("#word").text(data);
+});
+
+socket.on("wordUpdateSolved", function(data){
+    $("#wordSolved").text(data);
+
+});
 
 //on local page load
 $(document).ready(function () {
@@ -97,6 +120,10 @@ $(document).ready(function () {
         return false;
     });
 
+    $("#startGameButton").click(function(){
+        socket.emit("startGame");
+    });
+
 });
 
 //Adds parameter message to the chat scroller
@@ -111,4 +138,8 @@ function AddChatMessage(message) {
 //Sets the HTML Screen to be displayed, based on content Type.
 function screenSwitcher(screen) {
     $(".screen").hide();
+}
+
+function notMyTurn(isIt){
+
 }
