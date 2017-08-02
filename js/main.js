@@ -1,11 +1,11 @@
-var socket = io("http://localhost:8080");
+var socket = io("http://ryanpeterson.me:8080");
 var username = "Anonymous";
 var myTurn = false;
 var userCount;
 var timer;
 
 socket.on('connect', function () {
-    AddChatMessage("Connected!");
+    AddChatMessage(2, "Connected!");
 });
 
 //Drawing Event
@@ -25,23 +25,27 @@ socket.on("init", function (data) {
 
 //listens if we get disconnected from server
 socket.on('disconnect', function () {
-    AddChatMessage("Disconnected From Server!");
+    AddChatMessage(2, "Disconnected From Server!");
 });
 
 //listens if we are attempting to reconnect to server
 socket.on('reconnecting', function () {
-    AddChatMessage("Attempting to Connect...");
+    AddChatMessage(1, "Attempting to Connect...");
 });
-
+  
 //listens for chat message feedback from server.
 socket.on('chatMessage', function (msg) {
-    AddChatMessage(msg.text);
+    AddChatMessage(1, msg.text);
 });
 
 //listens for user count updates
 socket.on('userCount', function (count) {
     userCount = count;
     $("#usersOnline").text(userCount + " Users");
+});
+
+socket.on("wordAnswer", function(data){
+    AddChatMessage(2, "The guessed word was "+data);
 });
 
 //listens for content updates from server
@@ -75,7 +79,7 @@ socket.on("playerAddedStart", function (players) {
 
 socket.on("gameStarted", function () {
     $(".modal").hide();
-    AddChatMessage("Game Starting!");
+    AddChatMessage(2, "Game Starting!");
 });
 
 socket.on("newRound", function (data) {
@@ -85,11 +89,11 @@ socket.on("newRound", function (data) {
 });
 
 socket.on("roundWin", function (data) {
-    AddChatMessage(data + " won the round!");
+    AddChatMessage(2, data + " won the round!");
 });
 
 socket.on("nextTurnPlayer", function (data) {
-    AddChatMessage("It's " + data.who + "'s turn to draw!");
+    AddChatMessage(3, "It's " + data.who + "'s turn to draw!");
 
     notMyTurn(false);
 });
@@ -166,8 +170,16 @@ function chatMessage(message) {
 }
 
 //Adds parameter message to the chat scroller
-function AddChatMessage(message) {
-    $(".chatScroller").append($('<li>').text(message));
+function AddChatMessage(type, message) {
+
+    if(type == 1){
+        $(".chatScroller").append($('<li>').text(message));
+    } else if (type == 2){
+        $(".chatScroller").append($('<li class="b">').text(message));
+    } else if (type == 3){
+        $(".chatScroller").append($('<li class="red">').text(message));
+    }
+
     $("#chat").animate({
         scrollTop: 9000
     }, "slow");

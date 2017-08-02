@@ -85,6 +85,14 @@ body, html {
 
 }
 
+.b{
+    font-weight: bold;
+}
+
+.red {
+    color:red;
+}
+
 .modal-chat {
     height:20%;
     width:100%;

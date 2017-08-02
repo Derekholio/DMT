@@ -115,7 +115,7 @@ io.on('connection', function (socket) {
     socket.on('drawing', function (data) {
         socket.broadcast.emit('drawing', data);
 
-        drawHistory.push(data);
+        //drawHistory.push(data);
     });
 
     socket.on("startGame", startGame);
@@ -125,6 +125,11 @@ io.on('connection', function (socket) {
 function startGame(event) {
     console.log("starting Game!");
     game.inProgress = true;
+    clearTimeout(game.roundTimer);
+
+    game.players.forEach(function(player){
+        player.points = 0;
+    });
 
     io.emit("gameStarted");
     newRound();
@@ -187,6 +192,7 @@ function sendWordToClient() {
 }
 
 function endGame() {
+    clearTimeout(game.roundTimer);
     game.inProgress = false;
 
     var winner = {
@@ -200,9 +206,12 @@ function endGame() {
             winner.score = player.points;
         }
     });
-    winner.player.wins += 1;
 
-    io.emit("winner", winner);
+    if(winner.player){
+         winner.player.wins += 1;
+         io.emit("winner", winner);
+    }
+   
 
     setTimeout(function () {
         io.emit("gameEnded");
@@ -221,9 +230,18 @@ function getNewWord() {
 }
 
 function roundWin(username) {
-    var winner = findPlayerByUsername(username);
-    winner.points += 10;
+    var winner = {};
 
+    if(username != "Nobody") {
+         winner = findPlayerByUsername(username);
+        winner.points += 10;
+    } else {
+         winner = {
+            username:"Nobody"
+        };
+    }
+
+    io.emit("wordAnswer", game.currentWordSolved);
     io.emit("roundWin", winner.username);
     newRound();
 }
@@ -234,7 +252,7 @@ function newRound() {
 
 
         game.roundTimer = setTimeout(function () {
-            io.emit("roundWin", "Nobody");
+            roundWin("Nobody");
             newRound();
         }, game.roundTimeout * 1000);
 
@@ -258,7 +276,6 @@ function findPlayerByUsername(username) {
 
     game.players.forEach(function (item) {
         if (username == item.username) {
-
             player = item;
         }
     });
