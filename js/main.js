@@ -1,4 +1,4 @@
-var socket = io("http://ryanpeterson.me:8080");
+var socket = io("http://localhost:8080");
 var username = "Anonymous";
 var myTurn = false;
 var userCount;
