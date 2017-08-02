@@ -111,13 +111,23 @@ socket.on("wordUpdateSolved", function (data) {
 
 });
 
+socket.on("playersnpoints", function(data){
+    $("#playersnpoints").html("");
+    data.forEach(function(player){
+        $("#playersnpoints").append(player.username+": "+player.points+" points<BR>");
+    });
+});
+
 socket.on("gameEnded", function () {
+
     $("#modal-winner").hide();
     $("#modal-playerList").show();
     $(".modal").show();
 });
 
 socket.on("winner", function (winner) {
+    clearInterval(timer);
+    AddChatMessage(2, winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-playerList").hide();
     $("#modal-winner").show();
@@ -209,7 +219,7 @@ function notMyTurn(turn) {
 function countDownTimer(time) {
     clearInterval(timer);
 
-    var timeleft = 60;
+    var timeleft = time;
     timer = setInterval(function () {
         timeleft--;
         $("#timer").text(timeleft);

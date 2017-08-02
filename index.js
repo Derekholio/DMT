@@ -17,7 +17,7 @@ var game = {
     currentPlayer: null,
     currentWord: "",
     currentWordSolved: "",
-    roundTimeout: 60,
+    roundTimeout: 120,
     roundTimer: null
 };
 
@@ -104,6 +104,9 @@ io.on('connection', function (socket) {
 
         game.players.forEach(function (item, i) {
             if (item.socket == socket.id) {
+                if(item == game.currentPlayer){
+                    roundWin("Nobody");
+                }
                 game.players.splice(i, 1);
             }
         });
@@ -187,6 +190,23 @@ function doGuess(guess, username) {
     }
 }
 
+function sendplayersnpoints(){
+    var playersnpoints = [];
+
+    game.players.forEach(function(item){
+        if(item.isPlaying){
+            var t = {
+                username: item.username,
+                points: item.points
+            };
+
+            playersnpoints.push(t);
+        }
+    });
+
+        io.emit("playersnpoints", playersnpoints);
+}
+
 function sendWordToClient() {
     io.emit("wordUpdate", game.currentWord.toUpperCase());
 }
@@ -233,15 +253,20 @@ function roundWin(username) {
     var winner = {};
 
     if(username != "Nobody") {
-         winner = findPlayerByUsername(username);
+        winner = findPlayerByUsername(username);
         winner.points += 10;
+
+        game.currentPlayer.points += 5;
+
     } else {
          winner = {
             username:"Nobody"
         };
     }
 
+
     io.emit("wordAnswer", game.currentWordSolved);
+    sendplayersnpoints();
     io.emit("roundWin", winner.username);
     newRound();
 }
@@ -249,7 +274,7 @@ function roundWin(username) {
 function newRound() {
     if (game.inProgress) {
         clearTimeout(game.roundTimer);
-
+        sendplayersnpoints();
 
         game.roundTimer = setTimeout(function () {
             roundWin("Nobody");
