@@ -2,7 +2,7 @@ var socket = io("http://localhost:8080");
 var username = "Anonymous";
 var myTurn = false;
 var userCount;
-
+var timer;
 
 socket.on('connect', function () {
     AddChatMessage("Connected!");
@@ -15,8 +15,10 @@ socket.on('drawing', onDrawingEvent);
 socket.on("init", function (data) {
     username = data.username;
     console.log(username);
-    if(data.inProgress){
+    if (data.inProgress) {
         $(".modal").hide();
+    } else {
+        $("#modal-playerList").show();
     }
 });
 
@@ -28,7 +30,7 @@ socket.on('disconnect', function () {
 
 //listens if we are attempting to reconnect to server
 socket.on('reconnecting', function () {
-    AddChatMessage("Attempting to Reconnect...");
+    AddChatMessage("Attempting to Connect...");
 });
 
 //listens for chat message feedback from server.
@@ -76,6 +78,16 @@ socket.on("gameStarted", function () {
     AddChatMessage("Game Starting!");
 });
 
+socket.on("newRound", function (data) {
+    notMyTurn(false);
+    canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
+    countDownTimer(data);
+});
+
+socket.on("roundWin", function (data) {
+    AddChatMessage(data + " won the round!");
+});
+
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage("It's " + data.who + "'s turn to draw!");
 
@@ -95,6 +107,19 @@ socket.on("wordUpdateSolved", function (data) {
 
 });
 
+socket.on("gameEnded", function () {
+    $("#modal-winner").hide();
+    $("#modal-playerList").show();
+    $(".modal").show();
+});
+
+socket.on("winner", function (winner) {
+    $("#modal-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
+    $("#modal-playerList").hide();
+    $("#modal-winner").show();
+    $(".modal").show();
+});
+
 //on local page load
 $(document).ready(function () {
 
@@ -108,12 +133,21 @@ $(document).ready(function () {
         $("#chatInput").val("");
 
         if (chatVal.length > 0) {
-            socket.emit('chatMessage', {
-                username: username,
-                text: chatVal
-            });
+            chatMessage(chatVal);
         }
 
+        return false;
+    });
+
+
+    $('#modal-chatInputForm').submit(function (event) {
+        event.preventDefault();
+        var chatVal = $("#modal-chatInput").val();
+        $("#modal-chatInput").val("");
+
+        if (chatVal.length > 0) {
+            chatMessage(chatVal);
+        }
 
         return false;
     });
@@ -124,10 +158,21 @@ $(document).ready(function () {
 
 });
 
+function chatMessage(message) {
+    socket.emit('chatMessage', {
+        username: username,
+        text: message
+    });
+}
+
 //Adds parameter message to the chat scroller
 function AddChatMessage(message) {
-    $("#chatScroller").append($('<li>').text(message));
+    $(".chatScroller").append($('<li>').text(message));
     $("#chat").animate({
+        scrollTop: 9000
+    }, "slow");
+
+    $(".modal-chat").animate({
         scrollTop: 9000
     }, "slow");
 }
@@ -146,4 +191,17 @@ function notMyTurn(turn) {
     } else {
         $(".turn").hide();
     }
+}
+
+
+function countDownTimer(time) {
+    clearInterval(timer);
+
+    var timeleft = 60;
+    timer = setInterval(function () {
+        timeleft--;
+        $("#timer").text(timeleft);
+        if (timeleft <= 0)
+            clearInterval(timer);
+    }, 1000);
 }

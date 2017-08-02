@@ -16,7 +16,9 @@ var game = {
     currentTurn: -1,
     currentPlayer: null,
     currentWord: "",
-    currentWordSolved: ""
+    currentWordSolved: "",
+    roundTimeout: 60,
+    roundTimer: null
 };
 
 //HAndles Node server web page serving.  Currently Not used.
@@ -41,7 +43,8 @@ io.on('connection', function (socket) {
         socket: socket.id,
         isPlaying: false,
         drawing: false,
-        points: 0
+        points: 0,
+        wins: 0
     };
 
     if (!game.inProgress) {
@@ -55,13 +58,20 @@ io.on('connection', function (socket) {
         inProgress: game.inProgress
     };
 
-    if(game.inProgress){
+    if (game.inProgress) {
         sendWordToClient();
     }
 
     socket.emit('init', initPayload);
 
     io.emit("playerAddedStart", game.players);
+
+    if (game.inProgress) {
+        var msg = {
+            text: player.username + " joined the game! (SPECTATING)"
+        };
+        io.emit("chatMessage", msg);
+    }
 
     //emits usercount to be displayed on page.  May replace with inital start payload
     io.emit('userCount', userCount);
@@ -71,11 +81,20 @@ io.on('connection', function (socket) {
         console.log("Chat Message", msg);
 
         if (msg.text.length > 0) {
-            doGuess(msg.text, msg.username);
-            msg.text = msg.username + ": " + msg.text;
+            var g = msg.text;
+            var status = "";
+
+            if (!findPlayerByUsername(msg.username).isPlaying) {
+                status = "(SPECTATING) ";
+            }
+
+            msg.text = status + msg.username + ": " + msg.text;
             io.emit('chatMessage', msg);
 
-            
+            if (game.inProgress && findPlayerByUsername(msg.username).isPlaying) {
+                doGuess(g, msg.username);
+            }
+
         }
     });
 
@@ -108,11 +127,12 @@ function startGame(event) {
     game.inProgress = true;
 
     io.emit("gameStarted");
-    updatePlayerTurn();
-    getNewWord();
+    newRound();
+    //updatePlayerTurn();
+    // getNewWord();
 
-    sendWordToClient();
-    io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved);
+    //sendWordToClient();
+    //io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
 }
 
 //Returns Time in Seconds
@@ -123,8 +143,8 @@ function getTime() {
 function updatePlayerTurn() {
     game.currentTurn += 1;
 
-
     if (game.currentTurn >= game.players.length) {
+        console.log("game ended");
         endGame();
     } else if (!game.players[game.currentTurn].isPlaying) {
         updatePlayerTurn();
@@ -143,35 +163,53 @@ function updatePlayerTurn() {
     }
 }
 
-function doGuess(guess, username){
-    if(guess.length == 1){
-
-        for(var x = 0; x <= game.currentWordSolved.length; x++){
+function doGuess(guess, username) {
+    if (guess.length == 1) {
+        for (var x = 0; x <= game.currentWordSolved.length; x++) {
             var c = game.currentWordSolved.charAt(x);
 
-            if(c == guess.toLowerCase()){
-
+            if (c == guess.toLowerCase()) {
                 game.currentWord = game.currentWord.setCharAt(x, guess.toLowerCase());
                 sendWordToClient();
             }
         }
 
+    } else if (guess.length == game.currentWordSolved.length) {
+        if (guess.toLowerCase() == game.currentWordSolved) {
 
-
-    } else if(guess.length == game.currentWordSolved.length){
-        if(guess == game.currentWordSolved){
-            RoundWin(username);
+            roundWin(username);
         }
     }
 }
 
-function sendWordToClient(){
+function sendWordToClient() {
     io.emit("wordUpdate", game.currentWord.toUpperCase());
 }
 
 function endGame() {
     game.inProgress = false;
-    io.emit("gameEnded");
+
+    var winner = {
+        player: null,
+        score: -1
+    };
+
+    game.players.forEach(function (player) {
+        if (player.points > winner.score) {
+            winner.player = player;
+            winner.score = player.points;
+        }
+    });
+    winner.player.wins += 1;
+
+    io.emit("winner", winner);
+
+    setTimeout(function () {
+        io.emit("gameEnded");
+    }, 10000);
+
+    game.currentTurn = -1;
+    game.currentPlayer = null;
 }
 
 function getNewWord() {
@@ -182,8 +220,53 @@ function getNewWord() {
     }
 }
 
+function roundWin(username) {
+    var winner = findPlayerByUsername(username);
+    winner.points += 10;
 
-String.prototype.setCharAt = function(index,chr) {
-	if(index > this.length-1) return str;
-	return this.substr(0,index) + chr + this.substr(index+1);
+    io.emit("roundWin", winner.username);
+    newRound();
+}
+
+function newRound() {
+    if (game.inProgress) {
+        clearTimeout(game.roundTimer);
+
+
+        game.roundTimer = setTimeout(function () {
+            io.emit("roundWin", "Nobody");
+            newRound();
+        }, game.roundTimeout * 1000);
+
+        io.emit("newRound", game.roundTimeout);
+    }
+    game.currentWord = "";
+    game.currentWordSolved = "";
+
+    updatePlayerTurn();
+
+    if (game.inProgress) {
+        getNewWord();
+
+        sendWordToClient();
+        io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
+    }
+}
+
+function findPlayerByUsername(username) {
+    var player;
+
+    game.players.forEach(function (item) {
+        if (username == item.username) {
+
+            player = item;
+        }
+    });
+
+    return player;
+}
+
+String.prototype.setCharAt = function (index, chr) {
+    if (index > this.length - 1) return str;
+    return this.substr(0, index) + chr + this.substr(index + 1);
 };

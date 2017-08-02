@@ -48,13 +48,13 @@
                 </div>
 
                 <div class="infoBox">
-                    <p id="word">S U P E R M A N</p>
+                    <p id="word"></p>
                 </div>
                 <div class="infoBox turn">
-                    <p id="wordSolved">S U P E R M A N</p>
+                    <p id="wordSolved"></p>
                 </div>
                 <div class="infoBox">
-                    <p id="timer">69s</p>
+                    <p id="timer"></p>
                 </div>
             </div>
 
@@ -65,12 +65,12 @@
             <div id="chatContainer">
                 <div id="usersOnline"></div>
                 <div id="chat">
-                    <ul id="chatScroller">
+                    <ul class="chatScroller">
                     </ul>
                 </div>
 
                 <form action="" id="chatInputForm" autocomplete="off">
-                    <input type="text" id="chatInput" />
+                    <input type="text" id="chatInput" placeholder="Chat" />
                 </form>
             </div>
         </div>
@@ -84,10 +84,25 @@
 
         <!-- Modal content -->
         <div class="modal-content">
-            <ul id="playersToStart" class="list-group">
+            <div id="modal-playerList">
+                <ul id="playersToStart" class="list-group">
 
-            </ul>
-            <button class="btn btn-primary" id="startGameButton">Start Game</button>
+                </ul>
+                <button class="btn btn-primary" id="startGameButton">Start Game</button>
+            </div>
+
+            <div id="modal-winner">
+
+            </div>
+
+            <div class="modal-chat">
+                <ul class="chatScroller">
+                </ul>
+            </div>
+
+            <form action="" id="modal-chatInputForm" autocomplete="off">
+                <input type="text" id="modal-chatInput" placeholder="Chat"/>
+            </form>
         </div>
 
     </div>
