@@ -22,8 +22,8 @@ var canvas = {
         if (!emit) {
             return;
         }
-        var w = 1; //this.self.width;
-        var h = 1; //this.self.height;
+        var w = this.self.width;
+        var h = this.self.height;
 
         socket.emit('drawing', {
             x0: x0 / w,
@@ -89,8 +89,8 @@ function onMouseMove(e) {
 }
 
 function onDrawingEvent(data) {
-    var w = 1; //canvas.self.width;
-    var h = 1; //canvas.self.height;
+    var w = canvas.self.width;
+    var h = canvas.self.height;
     canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
 }
 
@@ -107,7 +107,10 @@ function onColorUpdate(e) {
 }
 
 function onResize() {
-
+    canvas.self.height = canvas.self.offsetHeight;
+    canvas.self.width = canvas.self.offsetWidth;
+    canvas.mouseXOffset = canvas.self.getBoundingClientRect().left;
+    canvas.mouseYOffset = canvas.self.getBoundingClientRect().top;
 }
 
 function loadCanvas(el) {
@@ -132,8 +135,8 @@ function loadCanvas(el) {
     canvas.self.addEventListener('mousedown', onMouseDown, false);
     canvas.self.addEventListener('mouseup', onMouseUp, false);
     canvas.self.addEventListener('mouseout', onMouseUp, false);
-    canvas.self.addEventListener('mousemove', throttle(onMouseMove, 0), false);
-    window.addEventListener("resize", onResize);
+    canvas.self.addEventListener('mousemove', throttle(onMouseMove, 50), false);
+    //window.addEventListener("resize", onResize);
 
 
 }

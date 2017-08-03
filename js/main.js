@@ -83,12 +83,14 @@ socket.on("gameStarted", function () {
 });
 
 socket.on("newRound", function (data) {
+    onResize();
     notMyTurn(false);
     canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
     countDownTimer(data);
 });
 
 socket.on("roundWin", function (data) {
+    clearInterval(timer);
     AddChatMessage(2, data + " won the round!");
 });
 

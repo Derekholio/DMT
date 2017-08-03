@@ -268,7 +268,11 @@ function roundWin(username) {
     io.emit("wordAnswer", game.currentWordSolved);
     sendplayersnpoints();
     io.emit("roundWin", winner.username);
-    newRound();
+
+    setTimeout(function(){
+        newRound();
+    }, 3000);
+    
 }
 
 function newRound() {
