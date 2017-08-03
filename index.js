@@ -9,7 +9,7 @@ var port = process.env.PORT || 8080;
 //DMT Variables
 var userCount = 0;
 var drawHistory = [];
-
+ 
 var game = {
     inProgress: false,
     players: [],
@@ -130,6 +130,9 @@ function startGame(event) {
     game.inProgress = true;
     clearTimeout(game.roundTimer);
 
+        game.currentTurn = -1;
+    game.currentPlayer = null;
+
     game.players.forEach(function(player){
         player.points = 0;
     });
@@ -184,7 +187,8 @@ function doGuess(guess, username) {
 
     } else if (guess.length == game.currentWordSolved.length) {
         if (guess.toLowerCase() == game.currentWordSolved) {
-
+            game.currentWord = game.currentWordSolved;
+            sendWordToClient();
             roundWin(username);
         }
     }
@@ -263,7 +267,7 @@ function roundWin(username) {
             username:"Nobody"
         };
     }
-
+ 
 
     io.emit("wordAnswer", game.currentWordSolved);
     sendplayersnpoints();
@@ -282,7 +286,7 @@ function newRound() {
 
         game.roundTimer = setTimeout(function () {
             roundWin("Nobody");
-            newRound();
+            //newRound();
         }, game.roundTimeout * 1000);
 
         io.emit("newRound", game.roundTimeout);

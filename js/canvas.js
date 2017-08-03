@@ -72,7 +72,7 @@ function onMouseUp(e) {
         return;
     }
     canvas.isDrawing = false;
-    canvas.drawLine(canvas.current.x, canvas.current.y, e.clientX, e.clientY, canvas.current.color, canvas.current.lineWidth, true);
+    //canvas.drawLine(canvas.current.x, canvas.current.y, e.clientX, e.clientY, canvas.current.color, canvas.current.lineWidth, true);
 }
 
 function onMouseMove(e) {
