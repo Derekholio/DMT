@@ -33,6 +33,11 @@ var canvas = {
             color: color,
             lineWidth: lineWidth
         });
+    },
+
+    clearScreen: function(){
+        this.context.clearRect(0, 0, this.self.width, this.self.height);
+        //socket.emit("clearScreen");
     }
 
 
@@ -96,7 +101,7 @@ function onDrawingEvent(data) {
 
 function onColorUpdate(e) {
     var tar = e.target.className.split(' ')[2];
-    console.log(tar);
+  
     if (tar == "plus") {
         canvas.current.lineWidth += 2;
     } else if (tar == "minus") {

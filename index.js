@@ -76,6 +76,10 @@ io.on('connection', function (socket) {
     //emits usercount to be displayed on page.  May replace with inital start payload
     io.emit('userCount', userCount);
 
+    socket.on("clearScreen", function(){
+        io.emit("clearScreen");
+    });
+
     //on message from chat
     socket.on('chatMessage', function (msg) {
         console.log("Chat Message", msg);
