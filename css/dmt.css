@@ -73,6 +73,10 @@ body, html {
     width:100%;
 }
 
+.pencil {
+    cursor: url('pencil.cur'), auto;
+}
+
 #chatContainer {
     width:20%;
     height:100%;

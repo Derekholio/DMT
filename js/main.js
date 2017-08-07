@@ -1,4 +1,4 @@
-var socket = io("http://localhost:8080");
+var socket = io("http://"+window.location.hostname+":8080");
 var username = "Anonymous";
 var myTurn = false;
 var userCount;
@@ -32,7 +32,7 @@ socket.on('disconnect', function () {
 socket.on('reconnecting', function () {
     AddChatMessage(1, "Attempting to Connect...");
 });
-  
+
 //listens for chat message feedback from server.
 socket.on('chatMessage', function (msg) {
     AddChatMessage(1, msg.text);
@@ -44,8 +44,8 @@ socket.on('userCount', function (count) {
     $("#usersOnline").text(userCount + " Users");
 });
 
-socket.on("wordAnswer", function(data){
-    AddChatMessage(2, "The guessed word was "+data);
+socket.on("wordAnswer", function (data) {
+    AddChatMessage(2, "The guessed word was " + data);
 });
 
 //listens for content updates from server
@@ -56,7 +56,8 @@ socket.on('contentUpdate', function (content) {
     canvas.history = content.history;
 
     //set timeout because the resource has a load delay. if image error then erase.
-    canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
+    //canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
+    canvas.clearScreen();
 
     canvas.history.forEach(function (item) {
         console.log("Drawing line");
@@ -83,12 +84,15 @@ socket.on("gameStarted", function () {
 });
 
 socket.on("newRound", function (data) {
+    onResize();
+    canvas.isDrawing = false;
     notMyTurn(false);
     canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
     countDownTimer(data);
 });
 
 socket.on("roundWin", function (data) {
+    clearInterval(timer);
     AddChatMessage(2, data + " won the round!");
 });
 
@@ -111,24 +115,54 @@ socket.on("wordUpdateSolved", function (data) {
 
 });
 
+socket.on("playersnpoints", function (data) {
+    $("#playersnpoints").html("");
+    data.forEach(function (player) {
+        $("#playersnpoints").append(player.username + ": " + player.points + " points<BR>");
+    });
+});
+
 socket.on("gameEnded", function () {
+
     $("#modal-winner").hide();
     $("#modal-playerList").show();
     $(".modal").show();
 });
 
+socket.on("clearScreen", function(){
+    canvas.clearScreen();
+});
+
 socket.on("winner", function (winner) {
+    clearInterval(timer);
+    AddChatMessage(2, winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-playerList").hide();
     $("#modal-winner").show();
     $(".modal").show();
 });
 
+function colorCallback(color) {
+    canvas.current.color = color;
+}
+
 //on local page load
 $(document).ready(function () {
 
     //Loads All Canvas Variables and EVents (DRAWING)
     loadCanvas(document.getElementById("canvas"));
+
+    $("#colorWheel").farbtastic(colorCallback);
+
+    $('#penSize').on('change', function () {
+        canvas.current.lineWidth = this.value;
+        console.log(this.value);
+    });
+
+    $("#cls").click(function(){
+        canvas.clearScreen();
+        socket.emit("clearScreen");
+    });
 
     //handles chat input
     $('#chatInputForm').submit(function (event) {
@@ -172,11 +206,11 @@ function chatMessage(message) {
 //Adds parameter message to the chat scroller
 function AddChatMessage(type, message) {
 
-    if(type == 1){
+    if (type == 1) {
         $(".chatScroller").append($('<li>').text(message));
-    } else if (type == 2){
+    } else if (type == 2) {
         $(".chatScroller").append($('<li class="b">').text(message));
-    } else if (type == 3){
+    } else if (type == 3) {
         $(".chatScroller").append($('<li class="red">').text(message));
     }
 
@@ -200,8 +234,10 @@ function notMyTurn(turn) {
 
     if (turn) {
         $(".turn").show();
+        $("#canvas").addClass("pencil");
     } else {
         $(".turn").hide();
+        $("#canvas").removeClass("pencil");
     }
 }
 
@@ -209,7 +245,7 @@ function notMyTurn(turn) {
 function countDownTimer(time) {
     clearInterval(timer);
 
-    var timeleft = 60;
+    var timeleft = time;
     timer = setInterval(function () {
         timeleft--;
         $("#timer").text(timeleft);

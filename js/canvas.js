@@ -18,12 +18,14 @@ var canvas = {
         this.context.lineWidth = lineWidth;
         this.context.stroke();
         this.context.closePath();
+        this.context.lineJoin = 'round';
+        this.context.lineCap = 'round';
 
         if (!emit) {
             return;
         }
-        var w = 1; //this.self.width;
-        var h = 1; //this.self.height;
+        var w = this.self.width;
+        var h = this.self.height;
 
         socket.emit('drawing', {
             x0: x0 / w,
@@ -33,6 +35,11 @@ var canvas = {
             color: color,
             lineWidth: lineWidth
         });
+    },
+
+    clearScreen: function(){
+        this.context.clearRect(0, 0, this.self.width, this.self.height);
+        //socket.emit("clearScreen");
     }
 
 
@@ -72,7 +79,7 @@ function onMouseUp(e) {
         return;
     }
     canvas.isDrawing = false;
-    canvas.drawLine(canvas.current.x, canvas.current.y, e.clientX, e.clientY, canvas.current.color, canvas.current.lineWidth, true);
+    //canvas.drawLine(canvas.current.x, canvas.current.y, e.clientX, e.clientY, canvas.current.color, canvas.current.lineWidth, true);
 }
 
 function onMouseMove(e) {
@@ -89,14 +96,14 @@ function onMouseMove(e) {
 }
 
 function onDrawingEvent(data) {
-    var w = 1; //canvas.self.width;
-    var h = 1; //canvas.self.height;
+    var w = canvas.self.width;
+    var h = canvas.self.height;
     canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
 }
 
 function onColorUpdate(e) {
     var tar = e.target.className.split(' ')[2];
-    console.log(tar);
+  
     if (tar == "plus") {
         canvas.current.lineWidth += 2;
     } else if (tar == "minus") {
@@ -107,7 +114,10 @@ function onColorUpdate(e) {
 }
 
 function onResize() {
-
+    canvas.self.height = canvas.self.offsetHeight;
+    canvas.self.width = canvas.self.offsetWidth;
+    canvas.mouseXOffset = canvas.self.getBoundingClientRect().left;
+    canvas.mouseYOffset = canvas.self.getBoundingClientRect().top;
 }
 
 function loadCanvas(el) {
@@ -133,7 +143,7 @@ function loadCanvas(el) {
     canvas.self.addEventListener('mouseup', onMouseUp, false);
     canvas.self.addEventListener('mouseout', onMouseUp, false);
     canvas.self.addEventListener('mousemove', throttle(onMouseMove, 0), false);
-    window.addEventListener("resize", onResize);
+    //window.addEventListener("resize", onResize);
 
 
-}
+} 
