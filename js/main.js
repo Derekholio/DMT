@@ -1,4 +1,4 @@
-var socket = io("http://"+window.location.hostname+":6969");
+var socket = io();
 var username = "Anonymous";
 var myTurn = false;
 var userCount;
