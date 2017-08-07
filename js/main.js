@@ -85,6 +85,7 @@ socket.on("gameStarted", function () {
 
 socket.on("newRound", function (data) {
     onResize();
+    canvas.isDrawing = false;
     notMyTurn(false);
     canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
     countDownTimer(data);

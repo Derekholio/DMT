@@ -9,7 +9,7 @@ var port = process.env.PORT || 8080;
 //DMT Variables
 var userCount = 0;
 var drawHistory = [];
- 
+  
 var game = {
     inProgress: false,
     players: [],
@@ -31,7 +31,7 @@ http.listen(port, function () {
     console.log('listening on *:' + port);
 });
 
-
+  
 
 //Listens for socket connection event.  Once connected we attach our logic listeners
 io.on('connection', function (socket) {

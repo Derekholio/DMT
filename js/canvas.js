@@ -18,6 +18,8 @@ var canvas = {
         this.context.lineWidth = lineWidth;
         this.context.stroke();
         this.context.closePath();
+        this.context.lineJoin = 'round';
+        this.context.lineCap = 'round';
 
         if (!emit) {
             return;
@@ -140,8 +142,8 @@ function loadCanvas(el) {
     canvas.self.addEventListener('mousedown', onMouseDown, false);
     canvas.self.addEventListener('mouseup', onMouseUp, false);
     canvas.self.addEventListener('mouseout', onMouseUp, false);
-    canvas.self.addEventListener('mousemove', throttle(onMouseMove, 50), false);
+    canvas.self.addEventListener('mousemove', throttle(onMouseMove, 0), false);
     //window.addEventListener("resize", onResize);
 
 
-}
+} 
