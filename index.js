@@ -4,7 +4,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var Sentencer = require("sentencer");
 
-var port = process.env.PORT || 8080;
+var port = process.env.PORT || 6969;
 
 //DMT Variables
 var userCount = 0;
@@ -159,6 +159,7 @@ function updatePlayerTurn() {
     game.currentTurn += 1;
 
     if (game.currentTurn >= game.players.length) {
+        console.log(game.currentTurn, game.players.length);
         console.log("game ended");
         endGame();
     } else if (!game.players[game.currentTurn].isPlaying) {
