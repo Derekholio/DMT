@@ -111,7 +111,7 @@ socket.on("wordUpdate", function (data) {
 });
 
 socket.on("wordUpdateSolved", function (data) {
-    $("#wordSolved").text(data);
+    $("#wordSolved").html('<a target="_blank" href="http://www.urbandictionary.com/define.php?term='+data+'">'+data+'</a>');
 
 });
 
