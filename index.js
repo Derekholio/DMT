@@ -2,227 +2,152 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var mysql = require('mysql');
+var Sentencer = require("sentencer");
+
 var port = process.env.PORT || 8080;
-/*
-var con = mysql.createConnection({
-  host: "localhost",
-  user: "",
-  password: "",
-  database: ""
-});*/
 
- 
-//MTV2 Variables
+//DMT Variables
 var userCount = 0;
-var videoList = Array(); // = Array({type: 1, value: "v-RE7RUzjf8"}, {type: 1, value:"YpC1KWe9dp8"}, {type: 1, value:"JbepN4dKLbU"});
-var skipCount = 0;
-var lastUpdate = getTime();
-var timer;
-var iFrameTimeout = 30000;
 var drawHistory = [];
-
-var currentlyPlaying = {
-    type: 4,
-    value: "https://scontent-lhr3-1.xx.fbcdn.net/v/t1.0-9/13133232_10205163268195167_5300749367639802407_n.jpg?oh=1b559cc7c6ce0916000cbcfd9a3c0fef&oe=5A01D048",
-    startTime: getTime()
+  
+var game = {
+    inProgress: false,
+    players: [],
+    currentTurn: -1,
+    currentPlayer: null,
+    currentWord: "",
+    currentWordSolved: "",
+    roundTimeout: 120,
+    roundTimer: null
 };
-
-//Video Type ENUM
-var vType = {
-    NONE: 0,
-    YT: 1,
-    VOICE: 2,
-    FRAME: 3,
-    DRAW: 4
-};
-
-
-/*
-con.connect(function(err) {
-  if (err) throw err;
-  con.query("SELECT * FROM dataset", function (err, result, fields) {
-    if (err) throw err;
-    result.forEach(function(item){
-        if(item.status == 1 || item.status == 2 || item.status == 3){
-            videoList.push({type: item.status, value: item.data.hexDecode()})
-        }
-    });
-  });
-});*/
-
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
     //res.sendFile(__dirname + '/index.html');
 });
 
+//Starts local node webserver to listen on 3000
+http.listen(port, function () {
+    console.log('listening on *:' + port);
+});
+
+  
 
 //Listens for socket connection event.  Once connected we attach our logic listeners
 io.on('connection', function (socket) {
     console.log("connection established");
     userCount += 1;
 
-    io.emit('init', {
-        vType: vType
-    });
+    var player = {
+        username: Sentencer.make("{{adjective}} {{noun}}"),
+        socket: socket.id,
+        isPlaying: false,
+        drawing: false,
+        points: 0,
+        wins: 0
+    };
+
+    if (!game.inProgress) {
+        player.isPlaying = true;
+    }
+
+    game.players.push(player);
+
+    var initPayload = {
+        username: player.username,
+        inProgress: game.inProgress
+    };
+
+    if (game.inProgress) {
+        sendWordToClient();
+    }
+
+    socket.emit('init', initPayload);
+
+    io.emit("playerAddedStart", game.players);
+
+    if (game.inProgress) {
+        var msg = {
+            text: player.username + " joined the game! (SPECTATING)"
+        };
+        io.emit("chatMessage", msg);
+    }
+
     //emits usercount to be displayed on page.  May replace with inital start payload
     io.emit('userCount', userCount);
+
+    socket.on("clearScreen", function(){
+        io.emit("clearScreen");
+    });
 
     //on message from chat
     socket.on('chatMessage', function (msg) {
         console.log("Chat Message", msg);
-        io.emit('chatMessage', msg);
-    });
 
-    //on ready emit from client.  Indicates YT and Socket ready, client side.
-    socket.on('ready', function () {
-        socket.emit('contentUpdate', getVideoData());
+        if (msg.text.length > 0) {
+            var g = msg.text;
+            var status = "";
+
+            if (!findPlayerByUsername(msg.username).isPlaying) {
+                status = "(SPECTATING) ";
+            }
+
+            msg.text = status + msg.username + ": " + msg.text;
+            io.emit('chatMessage', msg);
+
+            if (game.inProgress && findPlayerByUsername(msg.username).isPlaying) {
+                doGuess(g, msg.username);
+            }
+
+        }
     });
 
     //on client disconnect.  Reemit usercount for client side
     socket.on('disconnect', function () {
         userCount -= 1;
-        io.emit('userCount', userCount);
+
+        game.players.forEach(function (item, i) {
+            if (item.socket == socket.id) {
+                if(item == game.currentPlayer){
+                    roundWin("Nobody");
+                }
+                game.players.splice(i, 1);
+            }
+        });
+
+        io.emit("playerAddedStart", game.players);
     });
 
-    //on addcontent from client.  Adds content, based on type, to videoList queue. If type 0 (none), it will play instantly.
-    socket.on('addContent', function (content) {
-        var newVideo = {
-            type: content.type,
-            value: content.value
-        };
 
-        videoList.push(newVideo);
-        console.log("Adding Video", newVideo);
-
-        if (currentlyPlaying.type == vType.NONE) {
-            nextVideo();
-        }
-    });
-
-    //on YT video end event
-    socket.on('videoEnded', function () {
-        console.log(socket.request.connection.remoteAddress);
-        nextVideo();
-    });
-
-    socket.on('drawing', function(data) {
+    socket.on('drawing', function (data) {
         socket.broadcast.emit('drawing', data);
 
-        drawHistory.push(data);
+        //drawHistory.push(data);
     });
 
-    //on skip button press.
-    socket.on('skip', function () {
-        skipCount++;
-        io.emit('skipCount', skipCount);
-
-        if (skipCount >= (userCount / 3)) {
-            console.log(socket.request.connection.remoteAddress);
-            io.emit('skip');
-            nextVideo();
-            skipCount = 0;
-        }
-    });
+    socket.on("startGame", startGame);
 
 }); // END IO.ON
 
+function startGame(event) {
+    console.log("starting Game!");
+    game.inProgress = true;
+    clearTimeout(game.roundTimer);
 
+        game.currentTurn = -1;
+    game.currentPlayer = null;
 
-//Handles the logic of loading the next video.  
-//Attempts to remove the oldest (first) item in the videoList queue.
-//If queue item, then set it to currentlyPlaying and emit  
-//If no queue, then undefined is returned and we show type 0 (none)
+    game.players.forEach(function(player){
+        player.points = 0;
+    });
 
-function nextVideo() {
+    io.emit("gameStarted");
+    newRound();
+    //updatePlayerTurn();
+    // getNewWord();
 
-    console.log("nextVideo Requested!");
-
-    //Deters multiple next commands
-    if (getTime() - lastUpdate >= 2) {
-        console.log("nextVideo Approved!");
-
-        //If iFrame timer then clear it out;
-        clearTimeout(timer);
-        drawHistory = [];
-
-        var next = videoList.shift();
-        console.log("Next Video: ", next);
-
-        if (next == undefined) {
-            currentlyPlaying = {
-                type: vType.NONE
-            };
-
-        } else {
-            currentlyPlaying = next;
-            currentlyPlaying.startTime = getTime();
-
-            //If iFrame set 30s timeout
-            if (currentlyPlaying.type == vType.FRAME) {
-                console.log("Starting iFrame Timer");
-                timer = setTimeout(function () {
-                    if (currentlyPlaying.type == vType.FRAME) {
-                        console.log("iFrame Timer Expired!  Requesting next video");
-                        nextVideo();
-                    }
-                }, iFrameTimeout);
-            }
-            
-        }
-
-
-        io.emit('contentUpdate', getVideoData());
-        lastUpdate = getTime();
-    } else {
-        console.log("Next View Request Denied!  Timeout");
-    }
-
-
-}
-
-function iFrameIntervalChecker() {
-    if (currentlyPlaying.type == vType.FRAME) {
-
-    }
-}
-
-//Returns currentlyPlaying data string for client transmission
-//Type 0 : none
-//Type 1 : YT
-function getVideoData() {
-    var data = {
-            type: currentlyPlaying.type,
-            value: currentlyPlaying.value,
-            //startTime: (getTime() - currentlyPlaying.startTime)
-        };
-
-    if (currentlyPlaying.type == vType.YT) {
-        data.startTime = (getTime() - currentlyPlaying.startTime);
-        /*
-        data = {
-            type: currentlyPlaying.type,
-            value: currentlyPlaying.value,
-            startTime: (getTime() - currentlyPlaying.startTime)
-        };*/
-    } else if (currentlyPlaying.type == vType.NONE) {
-        data = currentlyPlaying;
-    } else if (currentlyPlaying.type == vType.VOICE) {
-        data = currentlyPlaying;
-    } else if (currentlyPlaying.type == vType.FRAME) {
-        data = currentlyPlaying;
-    } else if (currentlyPlaying.type == vType.DRAW) {
-        data.history = drawHistory;
-        //data = currentlyPlaying;
-    } else {
-        data = currentlyPlaying;
-    }
-
-    console.log("getVideoData(): ", data);
-
-    return data;
-
+    //sendWordToClient();
+    //io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
 }
 
 //Returns Time in Seconds
@@ -230,35 +155,173 @@ function getTime() {
     return Math.floor(Date.now() / 1000);
 }
 
-//Starts local node webserver to listen on 3000
-http.listen(port, function () {
-    console.log('listening on *:' + port);
-});
+function updatePlayerTurn() {
+    game.currentTurn += 1;
 
+    if (game.currentTurn >= game.players.length) {
+        console.log(game.currentTurn, game.players.length);
+        console.log("game ended");
+        endGame();
+    } else if (!game.players[game.currentTurn].isPlaying) {
+        updatePlayerTurn();
+    } else {
+        if (game.currentTurn > 0) {
+            game.players[game.currentTurn - 1].drawing = false;
+        }
 
+        game.currentPlayer = game.players[game.currentTurn];
+        game.currentPlayer.drawing = true;
 
-
-
-
-String.prototype.hexEncode = function () {
-    var hex, i;
-
-    var result = "";
-    for (i = 0; i < this.length; i++) {
-        hex = this.charCodeAt(i).toString(16);
-        result += ("000" + hex).slice(-4);
+        io.emit("nextTurnPlayer", {
+            who: game.currentPlayer.username
+        });
+        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
     }
+}
 
-    return result;
-};
+function doGuess(guess, username) {
+    if (guess.length == 1) {
+        for (var x = 0; x <= game.currentWordSolved.length; x++) {
+            var c = game.currentWordSolved.charAt(x);
 
-String.prototype.hexDecode = function () {
-    var j;
-    var hexes = this.match(/.{1,4}/g) || [];
-    var back = "";
-    for (j = 0; j < hexes.length; j++) {
-        back += String.fromCharCode(parseInt(hexes[j], 16));
+            if (c == guess.toLowerCase()) {
+                game.currentWord = game.currentWord.setCharAt(x, guess.toLowerCase());
+                sendWordToClient();
+            }
+        }
+
+    } else if (guess.length == game.currentWordSolved.length) {
+        if (guess.toLowerCase() == game.currentWordSolved) {
+            game.currentWord = game.currentWordSolved;
+            sendWordToClient();
+            roundWin(username);
+        }
     }
+}
 
-    return back;
+function sendplayersnpoints(){
+    var playersnpoints = [];
+
+    game.players.forEach(function(item){
+        if(item.isPlaying){
+            var t = {
+                username: item.username,
+                points: item.points
+            };
+
+            playersnpoints.push(t);
+        }
+    });
+
+        io.emit("playersnpoints", playersnpoints);
+}
+
+function sendWordToClient() {
+    io.emit("wordUpdate", game.currentWord.toUpperCase());
+}
+
+function endGame() {
+    clearTimeout(game.roundTimer);
+    game.inProgress = false;
+
+    var winner = {
+        player: null,
+        score: -1
+    };
+
+    game.players.forEach(function (player) {
+        if (player.points > winner.score) {
+            winner.player = player;
+            winner.score = player.points;
+        }
+    });
+
+    if(winner.player){
+         winner.player.wins += 1;
+         io.emit("winner", winner);
+    }
+   
+
+    setTimeout(function () {
+        io.emit("gameEnded");
+    }, 10000);
+
+    game.currentTurn = -1;
+    game.currentPlayer = null;
+}
+
+function getNewWord() {
+    game.currentWordSolved = Sentencer.make("{{noun}}");
+
+    for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
+        game.currentWord += "_";
+    }
+}
+
+function roundWin(username) {
+    var winner = {};
+
+    if(username != "Nobody") {
+        winner = findPlayerByUsername(username);
+        winner.points += 10;
+
+        game.currentPlayer.points += 5;
+
+    } else {
+         winner = {
+            username:"Nobody"
+        };
+    }
+ 
+
+    io.emit("wordAnswer", game.currentWordSolved);
+    sendplayersnpoints();
+    io.emit("roundWin", winner.username);
+
+    setTimeout(function(){
+        newRound();
+    }, 3000);
+    
+}
+
+function newRound() {
+    if (game.inProgress) {
+        clearTimeout(game.roundTimer);
+        sendplayersnpoints();
+
+        game.roundTimer = setTimeout(function () {
+            roundWin("Nobody");
+            //newRound();
+        }, game.roundTimeout * 1000);
+
+        io.emit("newRound", game.roundTimeout);
+    }
+    game.currentWord = "";
+    game.currentWordSolved = "";
+
+    updatePlayerTurn();
+
+    if (game.inProgress) {
+        getNewWord();
+
+        sendWordToClient();
+        io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
+    }
+}
+
+function findPlayerByUsername(username) {
+    var player;
+
+    game.players.forEach(function (item) {
+        if (username == item.username) {
+            player = item;
+        }
+    });
+
+    return player;
+}
+
+String.prototype.setCharAt = function (index, chr) {
+    if (index > this.length - 1) return str;
+    return this.substr(0, index) + chr + this.substr(index + 1);
 };
