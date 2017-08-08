@@ -6,11 +6,11 @@ var canvas = {
 
     current: {
         color: 'black',
-        lineWidth: 4
+        lineWidth: 4,
+        context: "foreground"
     },
 
     drawLine: function (x0, y0, x1, y1, color, lineWidth, emit = false) {
-        console.log(x0, y0, x1, y1, color);
         this.context.beginPath();
         this.context.moveTo(x0, y0);
         this.context.lineTo(x1, y1);
@@ -40,6 +40,11 @@ var canvas = {
     clearScreen: function(){
         this.context.clearRect(0, 0, this.self.width, this.self.height);
         //socket.emit("clearScreen");
+    },
+
+    fillScreen:function(color){
+        this.context.fillStyle = color;
+        this.context.fillRect(0,0, this.self.width, this.self.height);
     }
 
 

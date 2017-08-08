@@ -1,4 +1,4 @@
-var socket = io();
+var socket = io("http://localhost:8080");
 var username = "Anonymous";
 var myTurn = false;
 var userCount;
@@ -61,7 +61,7 @@ socket.on('contentUpdate', function (content) {
 
     canvas.history.forEach(function (item) {
         console.log("Drawing line");
-        canvas.drawLine(item.x0, item.y0, item.x1, item.y1, item.color);
+        canvas.drawLine(item.x0, item.y0, item.x1, item.y1, item.color, item.lineWidth, false);
     });
 });
 
@@ -133,6 +133,19 @@ socket.on("clearScreen", function(){
     canvas.clearScreen();
 });
 
+socket.on("backgroundColorUpdate", function(color){
+    canvas.fillScreen(color);
+});
+
+socket.on("drawHistory", function(history){
+        var w = canvas.self.width;
+        var h = canvas.self.height;
+        history.forEach(function (item) {
+            console.log("Drawing line");
+            canvas.drawLine(item.x0 * w, item.y0 * h, item.x1 * w, item.y1 * h, item.color, item.lineWidth, false);
+    });
+});
+
 socket.on("winner", function (winner) {
     clearInterval(timer);
     AddChatMessage(2, winner.player.username + " won with " + winner.player.points + " points!");
@@ -144,6 +157,11 @@ socket.on("winner", function (winner) {
 
 function colorCallback(color) {
     canvas.current.color = color;
+
+    if(canvas.current.context == "background"){
+        //canvas.fillScreen();
+        socket.emit("backgroundColorUpdate", color);
+    }
 }
 
 //on local page load
@@ -156,7 +174,10 @@ $(document).ready(function () {
 
     $('#penSize').on('change', function () {
         canvas.current.lineWidth = this.value;
-        console.log(this.value);
+    });
+
+    $('#contextSelector').on('change', function () {
+        canvas.current.context = this.value;
     });
 
     $("#cls").click(function(){

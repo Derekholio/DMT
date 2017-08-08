@@ -119,15 +119,22 @@ io.on('connection', function (socket) {
     });
 
 
+    socket.on("backgroundColorUpdate", function(color){
+        io.emit("backgroundColorUpdate", color);
+        io.emit("drawHistory", drawHistory);
+
+    });
+
     socket.on('drawing', function (data) {
         socket.broadcast.emit('drawing', data);
 
-        //drawHistory.push(data);
+        drawHistory.push(data);
     });
 
     socket.on("startGame", startGame);
 
 }); // END IO.ON
+
 
 function startGame(event) {
     console.log("starting Game!");
@@ -298,6 +305,7 @@ function newRound() {
     }
     game.currentWord = "";
     game.currentWordSolved = "";
+    drawHistory = [];
 
     updatePlayerTurn();
 
