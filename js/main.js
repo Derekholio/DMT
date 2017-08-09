@@ -1,7 +1,7 @@
 var socket = null;
-if(window.location.hostname === "localhost"){
+if (window.location.hostname === "localhost") {
     socket = io("http://localhost:8080");
-}else{
+} else {
     socket = io(window.location.protocol + "//" + window.location.hostname);
 }
 
@@ -77,9 +77,9 @@ socket.on("playerAddedStart", function (players) {
 
     players.forEach(function (player) {
         if (username == player.username) {
-            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + ": "+player.wins+'</li>');
+            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + ": " + player.wins + '</li>');
         } else {
-            $("#playersToStart").append('<li class="list-group-item">' + player.username + ": "+player.wins+'</li>');
+            $("#playersToStart").append('<li class="list-group-item">' + player.username + ": " + player.wins + '</li>');
         }
     });
 });
@@ -87,6 +87,10 @@ socket.on("playerAddedStart", function (players) {
 socket.on("gameStarted", function () {
     $(".modal").hide();
     AddChatMessage(2, "Game Starting!");
+    $.titleAlert("Game Started!", {
+        requireBlur: true,
+        stopOnFocus: true
+    });
 });
 
 socket.on("newRound", function (data) {
@@ -110,6 +114,10 @@ socket.on("nextTurnPlayer", function (data) {
 });
 
 socket.on("yourTurn", function (data) {
+    $.titleAlert("Your Turn to Draw!", {
+        requireBlur: true,
+        stopOnFocus: true
+    });
     notMyTurn(true);
 });
 
@@ -132,8 +140,8 @@ socket.on("playersnpoints", function (data) {
 socket.on("winnersList", function (data) {
     $("#winnersList").html("");
 
-    data.forEach(function(item){
-        $("#winnersList").append($('<li>').text(item.username+": "+item.wins));
+    data.forEach(function (item) {
+        $("#winnersList").append($('<li>').text(item.username + ": " + item.wins));
     });
 });
 
