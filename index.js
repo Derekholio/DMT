@@ -22,8 +22,8 @@ var game = {
 };
 
 var timers = {
-    roundTimer:null,
-    letterTimer:null
+    roundTimer: null,
+    letterTimer: null
 };
 
 //HAndles Node server web page serving.  Currently Not used.
@@ -68,8 +68,9 @@ io.on('connection', function (socket) {
     }
 
     socket.emit('init', initPayload);
-
-    io.emit("playerAddedStart", game.players);
+    //sendWinnersList();
+    //io.emit("playerAddedStart", game.players);
+    sendPlayersList();
 
     if (game.inProgress) {
         var msg = {
@@ -120,7 +121,8 @@ io.on('connection', function (socket) {
             }
         });
 
-        io.emit("playerAddedStart", game.players);
+        //io.emit("playerAddedStart", game.players);
+        sendPlayersList();
     });
 
 
@@ -257,7 +259,8 @@ function endGame() {
         io.emit("winner", winner);
     }
 
-
+    //sendWinnersList();
+    sendPlayersList();
     setTimeout(function () {
         io.emit("gameEnded");
     }, 8000);
@@ -300,9 +303,35 @@ function roundWin(username) {
 
 }
 
-function clearTimers(){
+function clearTimers() {
     clearTimeout(timers.roundTimer);
     clearTimeout(timers.letterTimer);
+}
+
+function sendPlayersList() {
+    var list = [];
+
+    game.players.forEach(function (player) {
+        list.push({
+            username: player.username,
+            wins: player.wins
+        });
+    });
+
+    io.emit("playerAddedStart", list);
+}
+
+function sendWinnersList() {
+    var list = [];
+
+    game.players.forEach(function (player) {
+        list.push({
+            username: player.username,
+            wins: player.wins
+        });
+    });
+
+    io.emit("winnersList", list);
 }
 
 function newRound() {
@@ -316,17 +345,17 @@ function newRound() {
             //newRound();
         }, game.roundTimeout * 1000);
 
-        timers.letterTimer = setTimeout(function(){
+        timers.letterTimer = setTimeout(function () {
             guessLetter();
 
-            timers.letterTimer = setTimeout(function(){
+            timers.letterTimer = setTimeout(function () {
                 guessLetter();
 
-                timers.letterTimer = setTimeout(function(){
+                timers.letterTimer = setTimeout(function () {
                     guessLetter();
 
                 }, (game.roundTimeout / 8) * 1000);
-            }, (game.roundTimeout / 4) * 1000 );
+            }, (game.roundTimeout / 4) * 1000);
         }, (game.roundTimeout / 2) * 1000);
 
         io.emit("newRound", game.roundTimeout);
@@ -351,14 +380,14 @@ function newRound() {
 }
 
 function guessLetter() {
-    var guess = game.currentWordSolved.charAt(Math.floor(Math.random()*game.currentWordSolved.length));
+    var guess = game.currentWordSolved.charAt(Math.floor(Math.random() * game.currentWordSolved.length));
 
     for (var x = 0; x <= game.currentWordSolved.length; x++) {
         var c = game.currentWordSolved.charAt(x);
 
         if (c == guess.toLowerCase()) {
 
-            if(game.currentWord.charAt(x) == "_"){
+            if (game.currentWord.charAt(x) == "_") {
                 game.currentWord = game.currentWord.setCharAt(x, guess.toLowerCase());
                 sendWordToClient();
             } else {

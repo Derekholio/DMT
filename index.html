@@ -45,14 +45,6 @@
                         <option value="background">background</option>
                     </select>
                     <div id="colorWheel"></div>
-                    <!--<div class="icon color black"></div>
-                    <div class="icon color red"></div>
-                    <div class="icon color white"></div>
-                    <div class="icon color green"></div>
-                    <div class="icon color blue"></div>
-                    <div class="icon color yellow"></div>
-                    <div class="icon color minus">-</div>
-                    <div class="icon color plus">+</div>-->
                     <br>
                     Size:
                     <select id="penSize">
@@ -89,7 +81,7 @@
 
             <div id="chatContainer">
                 <div id="usersOnline"></div>
-                <div id="playersnpoints"></div>
+                <div class="playersnpoints"></div>
                 <div id="chat">
                     <ul class="chatScroller">
                     </ul>
@@ -111,6 +103,7 @@
         <!-- Modal content -->
         <div class="modal-content">
             <div id="modal-playerList">
+                <h3>Players</h3>
                 <ul id="playersToStart" class="list-group">
 
                 </ul>
@@ -118,7 +111,9 @@
             </div>
 
             <div id="modal-winner">
-
+                <div id="modal-winner-winner"></div>
+                <h3>Scoreboard</h3>
+                <div class="playersnpoints"></div>
             </div>
 
             <div class="modal-chat">

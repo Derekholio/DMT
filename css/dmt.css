@@ -160,3 +160,6 @@ body, html {
     display:none;
 }
 
+#winnersList{
+    list-style: none;
+}

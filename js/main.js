@@ -71,9 +71,9 @@ socket.on("playerAddedStart", function (players) {
 
     players.forEach(function (player) {
         if (username == player.username) {
-            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + '</li>');
+            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + ": "+player.wins+'</li>');
         } else {
-            $("#playersToStart").append('<li class="list-group-item">' + player.username + '</li>');
+            $("#playersToStart").append('<li class="list-group-item">' + player.username + ": "+player.wins+'</li>');
         }
     });
 });
@@ -89,7 +89,7 @@ socket.on("newRound", function (data) {
     canvas.isDrawing = false;
     notMyTurn(false);
     canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
-    
+
 });
 
 socket.on("roundWin", function (data) {
@@ -112,14 +112,22 @@ socket.on("wordUpdate", function (data) {
 });
 
 socket.on("wordUpdateSolved", function (data) {
-    $("#wordSolved").html('<a target="_blank" href="http://www.urbandictionary.com/define.php?term='+data+'">'+data+'</a>');
+    $("#wordSolved").html('<a target="_blank" href="http://www.urbandictionary.com/define.php?term=' + data + '">' + data + '</a>');
 
 });
 
 socket.on("playersnpoints", function (data) {
-    $("#playersnpoints").html("");
+    $(".playersnpoints").html("");
     data.forEach(function (player) {
-        $("#playersnpoints").append(player.username + ": " + player.points + " points<BR>");
+        $(".playersnpoints").append(player.username + ": " + player.points + " points<BR>");
+    });
+});
+
+socket.on("winnersList", function (data) {
+    $("#winnersList").html("");
+
+    data.forEach(function(item){
+        $("#winnersList").append($('<li>').text(item.username+": "+item.wins));
     });
 });
 
@@ -130,27 +138,27 @@ socket.on("gameEnded", function () {
     $(".modal").show();
 });
 
-socket.on("clearScreen", function(){
+socket.on("clearScreen", function () {
     canvas.clearScreen();
 });
 
-socket.on("backgroundColorUpdate", function(color){
+socket.on("backgroundColorUpdate", function (color) {
     canvas.fillScreen(color);
 });
 
-socket.on("drawHistory", function(history){
-        var w = canvas.self.width;
-        var h = canvas.self.height;
-        history.forEach(function (item) {
-            console.log("Drawing line");
-            canvas.drawLine(item.x0 * w, item.y0 * h, item.x1 * w, item.y1 * h, item.color, item.lineWidth, false);
+socket.on("drawHistory", function (history) {
+    var w = canvas.self.width;
+    var h = canvas.self.height;
+    history.forEach(function (item) {
+        console.log("Drawing line");
+        canvas.drawLine(item.x0 * w, item.y0 * h, item.x1 * w, item.y1 * h, item.color, item.lineWidth, false);
     });
 });
 
 socket.on("winner", function (winner) {
     clearInterval(timer);
     AddChatMessage(2, winner.player.username + " won with " + winner.player.points + " points!");
-    $("#modal-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
+    $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-playerList").hide();
     $("#modal-winner").show();
     $(".modal").show();
@@ -159,7 +167,7 @@ socket.on("winner", function (winner) {
 function colorCallback(color) {
     canvas.current.color = color;
 
-    if(canvas.current.context == "background"){
+    if (canvas.current.context == "background") {
         //canvas.fillScreen();
         socket.emit("backgroundColorUpdate", color);
     }
@@ -181,7 +189,7 @@ $(document).ready(function () {
         canvas.current.context = this.value;
     });
 
-    $("#cls").click(function(){
+    $("#cls").click(function () {
         canvas.clearScreen();
         socket.emit("clearScreen");
     });
