@@ -76,10 +76,14 @@ socket.on("playerAddedStart", function (players) {
     $("#playersToStart").html("");
 
     players.forEach(function (player) {
+        var medals = "";
+        for(x=0; x<player.wins; x++){
+            medals += '<img src="css/gold_medal.png">';
+        }
         if (username == player.username) {
-            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + ": " + player.wins + '</li>');
+            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
         } else {
-            $("#playersToStart").append('<li class="list-group-item">' + player.username + ": " + player.wins + '</li>');
+            $("#playersToStart").append('<li class="list-group-item">' + player.username + " " + medals + '</li>');
         }
     });
 });

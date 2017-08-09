@@ -164,6 +164,11 @@ body, html {
     display:none;
 }
 
+#playersToStart li img {
+    width:24px;
+    height:24px;
+}
+
 #winnersList{
     list-style: none;
 }
