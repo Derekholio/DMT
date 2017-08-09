@@ -78,7 +78,7 @@ socket.on("playerAddedStart", function (players) {
 
     players.forEach(function (player) {
         var medals = "";
-        for(x=0; x<player.wins; x++){
+        for (x = 0; x < player.wins; x++) {
             medals += '<img src="css/gold_medal.png">';
         }
         if (username == player.username) {
@@ -301,8 +301,17 @@ function countDownTimer(time) {
     var timeleft = time;
     timer = setInterval(function () {
         timeleft--;
+
         $("#timer").text(timeleft);
-        if (timeleft <= 0)
+
+        if (timeleft <= 15) {
+            $("#timer").effect("shake", {
+                distance: 5 + (15-timeleft)
+            });
+        }
+
+        if (timeleft <= 0) {
             clearInterval(timer);
+        }
     }, 1000);
 }
