@@ -18,7 +18,8 @@ var game = {
     currentWord: "",
     currentWordSolved: "",
     roundTimeout: 120,
-    roundTimer: null
+    roundTimer: null,
+    canGuess: false
 };
 
 //HAndles Node server web page serving.  Currently Not used.
@@ -164,6 +165,7 @@ function getTime() {
 
 function updatePlayerTurn() {
     game.currentTurn += 1;
+    
 
     if (game.currentTurn >= game.players.length) {
         console.log(game.currentTurn, game.players.length);
@@ -197,7 +199,7 @@ function doGuess(guess, username) {
             }
         }
 
-    } else if (guess.length == game.currentWordSolved.length) {
+    } else if (guess.length == game.currentWordSolved.length && game.canGuess) {
         if (guess.toLowerCase() == game.currentWordSolved) {
             game.currentWord = game.currentWordSolved;
             sendWordToClient();
@@ -230,6 +232,7 @@ function sendWordToClient() {
 function endGame() {
     clearTimeout(game.roundTimer);
     game.inProgress = false;
+    game.canGuess = false;
 
     var winner = {
         player: null,
@@ -251,7 +254,7 @@ function endGame() {
 
     setTimeout(function () {
         io.emit("gameEnded");
-    }, 10000);
+    }, 8000);
 
     game.currentTurn = -1;
     game.currentPlayer = null;
@@ -302,6 +305,8 @@ function newRound() {
         }, game.roundTimeout * 1000);
 
         io.emit("newRound", game.roundTimeout);
+
+        game.canGuess = true;
     }
     game.currentWord = "";
     game.currentWordSolved = "";

@@ -236,11 +236,11 @@ function AddChatMessage(type, message) {
     }
 
     $("#chat").animate({
-        scrollTop: 9000
+        scrollTop: $(this).height()
     }, "slow");
 
     $(".modal-chat").animate({
-        scrollTop: 9000
+        scrollTop: $(this).height()
     }, "slow");
 }
 
