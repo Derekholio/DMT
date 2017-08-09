@@ -153,6 +153,7 @@ function startGame(event) {
 
     game.players.forEach(function (player) {
         player.points = 0;
+        player.isPlaying = true;
     });
 
     io.emit("gameStarted");
@@ -248,6 +249,8 @@ function endGame() {
     };
 
     game.players.forEach(function (player) {
+        player.isPlaying = true;
+        
         if (player.points > winner.score) {
             winner.player = player;
             winner.score = player.points;
@@ -321,18 +324,6 @@ function sendPlayersList() {
     io.emit("playerAddedStart", list);
 }
 
-function sendWinnersList() {
-    var list = [];
-
-    game.players.forEach(function (player) {
-        list.push({
-            username: player.username,
-            wins: player.wins
-        });
-    });
-
-    io.emit("winnersList", list);
-}
 
 function newRound() {
     clearTimers();
