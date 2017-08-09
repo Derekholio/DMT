@@ -9,6 +9,7 @@ var username = "Anonymous";
 var myTurn = false;
 var userCount;
 var timer;
+var scrollerHeight = 900;
 
 socket.on('connect', function () {
     AddChatMessage(2, "Connected!");
@@ -265,12 +266,13 @@ function AddChatMessage(type, message) {
         $(".chatScroller").append($('<li class="red">').text(message));
     }
 
+    scrollerHeight += 400;
     $("#chat").animate({
-        scrollTop: $(this).height()
+        scrollTop: scrollerHeight
     }, "slow");
 
     $(".modal-chat").animate({
-        scrollTop: $(this).height()
+        scrollTop: scrollerHeight
     }, "slow");
 }
 
