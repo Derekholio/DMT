@@ -1,4 +1,10 @@
-var socket = io(window.location.protocol+"//"+window.location.hostname+":8080");
+var socket = null;
+if(window.location.hostname === "localhost"){
+    socket = io("http://localhost:8080");
+}else{
+    socket = io(window.location.protocol + "//" + window.location.hostname);
+}
+
 var username = "Anonymous";
 var myTurn = false;
 var userCount;
