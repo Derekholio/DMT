@@ -38,11 +38,12 @@ http.listen(port, function () {
 
 
 
-//Listens for socket connection event.  Once connected we attach our logic listeners
+//Listens for socket connection event.  Once connected we attach our logic listeners.  Also handles initial connection stuff
 io.on('connection', function (socket) {
     console.log("connection established");
     userCount += 1;
 
+    //setsup temporary player object
     var player = {
         username: Sentencer.make("{{adjective}} {{noun}}"),
         socket: socket.id,
@@ -53,26 +54,35 @@ io.on('connection', function (socket) {
         wins: 0
     };
 
+    //forces players who join mid game to spectate
     if (!game.inProgress) {
         player.isPlaying = true;
     }
 
+    //adds temp player object to games player queue
     game.players.push(player);
 
+    //inits inital client information
     var initPayload = {
         username: player.username,
         inProgress: game.inProgress
     };
 
+    //if the game is in progress we also send the word to client
     if (game.inProgress) {
         sendWordToClient();
     }
-
+    //sends username and progress to client
     socket.emit('init', initPayload);
+
+
     //sendWinnersList();
     //io.emit("playerAddedStart", game.players);
+
+    //sends player list to client, for modal
     sendPlayersList();
 
+    //if the game is in progress let everyone know someone joined and spectating
     if (game.inProgress) {
         var msg = {
             text: player.username + " joined the game! (SPECTATING)"
@@ -83,6 +93,7 @@ io.on('connection', function (socket) {
     //emits usercount to be displayed on page.  May replace with inital start payload
     io.emit('userCount', userCount);
 
+    //clears canvas event (cls button)
     socket.on("clearScreen", function () {
         io.emit("clearScreen");
     });
@@ -109,10 +120,11 @@ io.on('connection', function (socket) {
         }
     });
 
-    //on client disconnect.  Reemit usercount for client side
+    //on client disconnect.  removes player and updates player list
     socket.on('disconnect', function () {
         userCount -= 1;
 
+        //removes player from games player queue
         game.players.forEach(function (item, i) {
             if (item.socket == socket.id) {
                 if (item == game.currentPlayer) {
@@ -127,23 +139,36 @@ io.on('connection', function (socket) {
     });
 
 
+    //on background color updates.  sends background color, then drawing points to keep drawing intact
     socket.on("backgroundColorUpdate", function (color) {
         io.emit("backgroundColorUpdate", color);
         io.emit("drawHistory", drawHistory);
 
     });
 
+    //
+    //on drawing event
     socket.on('drawing', function (data) {
         socket.broadcast.emit('drawing', data);
-
         drawHistory.push(data);
     });
 
+
+    //on game start request (button clicked)
     socket.on("startGame", startGame);
 
 }); // END IO.ON
 
 
+
+
+/////////////////////////////////////////////////
+///////////GAME FUNCTIONS///////////////////////
+///////////////////////////////////////////////
+
+
+
+//handles starting of the game and setting of initial variabes
 function startGame(event) {
     console.log("starting Game!");
     game.inProgress = true;
@@ -173,6 +198,8 @@ function getTime() {
     return Math.floor(Date.now() / 1000);
 }
 
+
+//updates the players turn
 function updatePlayerTurn() {
     //game.currentTurn += 1;
     if (game.currentPlayer != null) {
@@ -221,6 +248,8 @@ function updatePlayerTurn() {
     }*/
 }
 
+
+//handles the guessing from chat
 function doGuess(guess, username) {
     /* if (guess.length == 1) {
          for (var x = 0; x <= game.currentWordSolved.length; x++) {
@@ -243,6 +272,8 @@ function doGuess(guess, username) {
 }
 
 
+
+//sends the players n points section
 function sendplayersnpoints() {
     var playersnpoints = [];
 
@@ -260,10 +291,14 @@ function sendplayersnpoints() {
     io.emit("playersnpoints", playersnpoints);
 }
 
+
+//sends unsolved word to client
 function sendWordToClient() {
     io.emit("wordUpdate", game.currentWord.toUpperCase());
 }
 
+
+//handles the ending of the game.  resets variables
 function endGame() {
     clearTimers();
     game.inProgress = false;
@@ -298,6 +333,8 @@ function endGame() {
     game.currentPlayer = null;
 }
 
+
+//gets a new word to be guessed
 function getNewWord() {
     game.currentWordSolved = Sentencer.make("{{noun}}");
 
@@ -306,6 +343,8 @@ function getNewWord() {
     }
 }
 
+
+//handles when a round is won.  Sends winner stuff to client
 function roundWin(username) {
     var winner = {};
 
@@ -332,11 +371,15 @@ function roundWin(username) {
 
 }
 
+
+//resets game timers
 function clearTimers() {
     clearTimeout(timers.roundTimer);
     clearTimeout(timers.letterTimer);
 }
 
+
+//sends player list (modal) to client
 function sendPlayersList() {
     var list = [];
 
@@ -351,6 +394,7 @@ function sendPlayersList() {
 }
 
 
+//handles a new round
 function newRound() {
     clearTimers();
 
@@ -396,6 +440,8 @@ function newRound() {
     }
 }
 
+
+//handles the single letter guessing by th game
 function guessLetter() {
     var guess = game.currentWordSolved.charAt(Math.floor(Math.random() * game.currentWordSolved.length));
 
@@ -415,6 +461,8 @@ function guessLetter() {
     }
 }
 
+
+//finds players by their username
 function findPlayerByUsername(username) {
     var player;
 
@@ -427,6 +475,8 @@ function findPlayerByUsername(username) {
     return player;
 }
 
+
+//third party setcharat function
 String.prototype.setCharAt = function (index, chr) {
     if (index > this.length - 1) return str;
     return this.substr(0, index) + chr + this.substr(index + 1);

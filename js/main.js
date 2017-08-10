@@ -51,8 +51,9 @@ socket.on('userCount', function (count) {
     $("#usersOnline").text(userCount + " Users");
 });
 
+//listens for when the word was solved
 socket.on("wordAnswer", function (data) {
-    AddChatMessage(2, "The guessed word was " + data);
+    AddChatMessage(2, "The word was " + data);
 });
 
 //listens for content updates from server
@@ -73,6 +74,7 @@ socket.on('contentUpdate', function (content) {
 });
 
 
+//listens for playerlist from server.  updates modal playerlist
 socket.on("playerAddedStart", function (players) {
     $("#playersToStart").html("");
 
@@ -88,6 +90,9 @@ socket.on("playerAddedStart", function (players) {
         }
     });
 });
+
+
+//listens for when the game is started
 socket.on("gameStarted", function () {
     $(".modal").hide();
    
@@ -99,6 +104,8 @@ socket.on("gameStarted", function () {
     });
 });
 
+
+//listens for new round
 socket.on("newRound", function (data) {
     countDownTimer(data);
     onResize();
@@ -108,17 +115,21 @@ socket.on("newRound", function (data) {
 
 });
 
+
+//listens for when round was won
 socket.on("roundWin", function (data) {
     clearInterval(timer);
     AddChatMessage(2, data + " won the round!");
 });
 
+//listens for next player update
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(3, "It's " + data.who + "'s turn to draw!");
 
     notMyTurn(false);
 });
 
+//tells individual user its their turn to draw
 socket.on("yourTurn", function (data) {
     $.titleAlert("Your Turn to Draw!", {
         requireBlur: true,
@@ -127,15 +138,18 @@ socket.on("yourTurn", function (data) {
     notMyTurn(true);
 });
 
+//listens and sets the unsolved word, updates infobox
 socket.on("wordUpdate", function (data) {
     $("#word").text(data);
 });
 
+//listens for when the word was solved, updates infobox
 socket.on("wordUpdateSolved", function (data) {
     $("#wordSolved").html('<a target="_blank" href="http://www.urbandictionary.com/define.php?term=' + data + '">' + data + '</a>');
 
 });
 
+//updates playersnpoints above chat
 socket.on("playersnpoints", function (data) {
     $(".playersnpoints").html("");
     data.forEach(function (player) {
@@ -143,6 +157,8 @@ socket.on("playersnpoints", function (data) {
     });
 });
 
+
+//listens for winners list and sets it in modal
 socket.on("winnersList", function (data) {
     $("#winnersList").html("");
 
@@ -151,21 +167,27 @@ socket.on("winnersList", function (data) {
     });
 });
 
-socket.on("gameEnded", function () {
 
+//listens for when the game has ended
+socket.on("gameEnded", function () {
     $("#modal-winner").hide();
     $("#modal-playerList").show();
     $(".modal").show();
 });
 
+//clears the canvas
 socket.on("clearScreen", function () {
     canvas.clearScreen();
 });
 
+
+//changes the canvas background color
 socket.on("backgroundColorUpdate", function (color) {
     canvas.fillScreen(color);
 });
 
+
+//listens for drawhistory from server, to redraw lines after canvas background updates
 socket.on("drawHistory", function (history) {
     var w = canvas.self.width;
     var h = canvas.self.height;
@@ -175,6 +197,8 @@ socket.on("drawHistory", function (history) {
     });
 });
 
+
+//listens for game winner, shows modal again
 socket.on("winner", function (winner) {
     clearInterval(timer);
     AddChatMessage(2, winner.player.username + " won with " + winner.player.points + " points!");
@@ -186,14 +210,7 @@ socket.on("winner", function (winner) {
     $("#modal-chatInput").focus();
 });
 
-function colorCallback(color) {
-    canvas.current.color = color;
 
-    if (canvas.current.context == "background") {
-        //canvas.fillScreen();
-        socket.emit("backgroundColorUpdate", color);
-    }
-}
 
 //on local page load
 $(document).ready(function () {
@@ -211,12 +228,13 @@ $(document).ready(function () {
         canvas.current.context = this.value;
     });
 
+    //handles clear screen button click
     $("#cls").click(function () {
         canvas.clearScreen();
         socket.emit("clearScreen");
     });
 
-    //handles chat input
+    //handles chat input, non modal
     $('#chatInputForm').submit(function (event) {
         event.preventDefault();
         var chatVal = $("#chatInput").val();
@@ -229,7 +247,7 @@ $(document).ready(function () {
         return false;
     });
 
-
+    //modal chat input handler
     $('#modal-chatInputForm').submit(function (event) {
         event.preventDefault();
         var chatVal = $("#modal-chatInput").val();
@@ -242,12 +260,25 @@ $(document).ready(function () {
         return false;
     });
 
+    //start game button handler
     $("#startGameButton").click(function () {
         socket.emit("startGame");
     });
 
 });
 
+//handles color picker changes
+function colorCallback(color) {
+    canvas.current.color = color;
+
+    if (canvas.current.context == "background") {
+        //canvas.fillScreen();
+        socket.emit("backgroundColorUpdate", color);
+    }
+}
+
+
+//handles chat message
 function chatMessage(message) {
     socket.emit('chatMessage', {
         username: username,
@@ -294,7 +325,7 @@ function notMyTurn(turn) {
     }
 }
 
-
+//handles the clock
 function countDownTimer(time) {
     clearInterval(timer);
 
