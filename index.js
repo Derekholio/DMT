@@ -1,7 +1,7 @@
 //Node Variables
 var app = require('express')();
 var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var io = require('socket.io')(http, {'pingInterval':1000, 'pingTimeout':5000});
 var Sentencer = require("sentencer");
 
 var port = process.env.PORT || 8080;
