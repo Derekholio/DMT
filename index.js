@@ -13,7 +13,7 @@ var drawHistory = [];
 var game = {
     inProgress: false,
     players: [],
-    currentTurn: -1,
+    //currentTurn: -1,
     currentPlayer: null,
     currentWord: "",
     currentWordSolved: "",
@@ -149,7 +149,7 @@ function startGame(event) {
     game.inProgress = true;
     clearTimers();
 
-    game.currentTurn = -1;
+  //  game.currentTurn = -1;
     game.currentPlayer = null;
 
     game.players.forEach(function (player) {
@@ -294,7 +294,7 @@ function endGame() {
         io.emit("gameEnded");
     }, 8000);
 
-    game.currentTurn = -1;
+    //game.currentTurn = -1;
     game.currentPlayer = null;
 }
 
