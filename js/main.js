@@ -326,10 +326,6 @@ function AddChatMessage(type, message) {
 }
 
 
-//Sets the HTML Screen to be displayed, based on content Type.
-function screenSwitcher(screen) {
-    $(".screen").hide();
-}
 
 //handles enabling/disabling turn elements (drawing or not)
 function notMyTurn(turn) {
@@ -368,6 +364,8 @@ function countDownTimer(time) {
 
 
 function resetInterface(){
+    $("#canvas").removeClass("pencil");
+    $(".turn").hide();
     $("#endGameButtonEndless").hide();
     $("#modal-winner").hide();
     $("#modal-playerList").show();

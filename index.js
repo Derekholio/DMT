@@ -149,6 +149,10 @@ io.on('connection', function (socket) {
             }
         });
 
+        if(game.players.length == 0 && game.inProgress){
+            endGame();
+        }
+
         //io.emit("playerAddedStart", game.players);
         sendPlayersList();
     });
