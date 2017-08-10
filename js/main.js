@@ -170,6 +170,7 @@ socket.on("winnersList", function (data) {
 
 //listens for when the game has ended
 socket.on("gameEnded", function () {
+    $("#endGameButtonEndless").hide();
     $("#modal-winner").hide();
     $("#modal-playerList").show();
     $(".modal").show();
@@ -195,6 +196,11 @@ socket.on("drawHistory", function (history) {
         console.log("Drawing line");
         canvas.drawLine(item.x0 * w, item.y0 * h, item.x1 * w, item.y1 * h, item.color, item.lineWidth, false);
     });
+});
+
+
+socket.on("endlessMode", function(){
+    $("#endGameButtonEndless").show();
 });
 
 
@@ -260,9 +266,19 @@ $(document).ready(function () {
         return false;
     });
 
+
+    $("#endGameButtonEndless").click(function(){
+        socket.emit("endGame");
+    });
+
     //start game button handler
     $("#startGameButton").click(function () {
         socket.emit("startGame");
+    });
+
+    //start game button handler for endless
+    $("#startGameButtonEndless").click(function () {
+        socket.emit("startGame", {gameMode: "endless"});
     });
 
 });

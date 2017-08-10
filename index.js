@@ -19,6 +19,7 @@ var game = {
     currentWordSolved: "",
     roundTimeout: 120,
     canGuess: false,
+    endlessMode: false
 };
 
 var timers = {
@@ -57,6 +58,8 @@ io.on('connection', function (socket) {
     //forces players who join mid game to spectate
     if (!game.inProgress) {
         player.isPlaying = true;
+    } else if (game.inProgress && game.endlessMode) {
+        player.isPlaying = true;
     }
 
     //adds temp player object to games player queue
@@ -84,9 +87,16 @@ io.on('connection', function (socket) {
 
     //if the game is in progress let everyone know someone joined and spectating
     if (game.inProgress) {
-        var msg = {
-            text: player.username + " joined the game! (SPECTATING)"
-        };
+        var msg = {};
+        if (game.endlessMode) {
+            msg = {
+                text: player.username + " joined the game!"
+            };
+        } else {
+            msg = {
+                text: player.username + " joined the game! (SPECTATING)"
+            };
+        }
         io.emit("chatMessage", msg);
     }
 
@@ -96,6 +106,11 @@ io.on('connection', function (socket) {
     //clears canvas event (cls button)
     socket.on("clearScreen", function () {
         io.emit("clearScreen");
+    });
+
+    //forces end game
+    socket.on("endGame", function () {
+        endGame();
     });
 
     //on message from chat
@@ -170,11 +185,17 @@ io.on('connection', function (socket) {
 
 //handles starting of the game and setting of initial variabes
 function startGame(event) {
+
+    if (event.gameMode == "endless") {
+        game.endlessMode = true;
+        io.emit("endlessMode");
+    }
+
     console.log("starting Game!");
     game.inProgress = true;
     clearTimers();
 
-  //  game.currentTurn = -1;
+    //  game.currentTurn = -1;
     game.currentPlayer = null;
 
     game.players.forEach(function (player) {
@@ -216,8 +237,17 @@ function updatePlayerTurn() {
     });
 
     if (game.currentPlayer == null) {
-        console.log("game ended");
-        endGame();
+        if (game.endlessMode) {
+            
+            game.players.forEach(function(player){
+                player.hasDrawn = false;
+            });
+
+            updatePlayerTurn();
+        } else {
+            console.log("game ended");
+            endGame();
+        }
     } else {
         game.currentPlayer.drawing = true;
         io.emit("nextTurnPlayer", {
@@ -226,26 +256,26 @@ function updatePlayerTurn() {
         io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
     }
 
-/*
-    if (game.currentTurn >= game.players.length) {
-        console.log(game.currentTurn, game.players.length);
-        console.log("game ended");
-        endGame();
-    } else if (!game.players[game.currentTurn].isPlaying) {
-        updatePlayerTurn();
-    } else {
-        if (game.currentTurn > 0) {
-            game.players[game.currentTurn - 1].drawing = false;
-        }
+    /*
+        if (game.currentTurn >= game.players.length) {
+            console.log(game.currentTurn, game.players.length);
+            console.log("game ended");
+            endGame();
+        } else if (!game.players[game.currentTurn].isPlaying) {
+            updatePlayerTurn();
+        } else {
+            if (game.currentTurn > 0) {
+                game.players[game.currentTurn - 1].drawing = false;
+            }
 
-        game.currentPlayer = game.players[game.currentTurn];
-        game.currentPlayer.drawing = true;
+            game.currentPlayer = game.players[game.currentTurn];
+            game.currentPlayer.drawing = true;
 
-        io.emit("nextTurnPlayer", {
-            who: game.currentPlayer.username
-        });
-        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
-    }*/
+            io.emit("nextTurnPlayer", {
+                who: game.currentPlayer.username
+            });
+            io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
+        }*/
 }
 
 
@@ -266,7 +296,7 @@ function doGuess(guess, username) {
         if (guess.toLowerCase() == game.currentWordSolved) {
             game.currentWord = game.currentWordSolved;
             game.canGuess = false;
-            
+
             sendWordToClient();
             roundWin(username);
         }
@@ -305,6 +335,7 @@ function endGame() {
     clearTimers();
     game.inProgress = false;
     game.canGuess = false;
+    game.endlessMode = false;
 
     var winner = {
         player: null,
@@ -428,7 +459,7 @@ function newRound() {
 
 
     }
-    
+
     game.currentWord = "";
     game.currentWordSolved = "";
     drawHistory = [];
