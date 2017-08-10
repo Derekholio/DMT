@@ -22,6 +22,8 @@ socket.on('drawing', onDrawingEvent);
 socket.on("init", function (data) {
     username = data.username;
     console.log(username);
+    resetInterface();
+
     if (data.inProgress) {
         $(".modal").hide();
     } else {
@@ -362,4 +364,12 @@ function countDownTimer(time) {
             clearInterval(timer);
         }
     }, 1000);
+}
+
+
+function resetInterface(){
+    $("#endGameButtonEndless").hide();
+    $("#modal-winner").hide();
+    $("#modal-playerList").show();
+    $(".modal").show();
 }
