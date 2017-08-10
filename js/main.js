@@ -88,9 +88,9 @@ socket.on("playerAddedStart", function (players) {
         }
     });
 });
-
 socket.on("gameStarted", function () {
     $(".modal").hide();
+   
     $("#chatInput").focus();
     AddChatMessage(2, "Game Starting!");
     $.titleAlert("Game Started!", {
