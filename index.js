@@ -312,12 +312,12 @@ function endGame() {
     };
 
     game.players.forEach(function (player) {
-        //player.isPlaying = true;
-
         if (player.points > winner.score && player.isPlaying) {
             winner.player = player;
             winner.score = player.points;
         }
+
+        player.isPlaying = true;
     });
 
     if (winner.player) {
