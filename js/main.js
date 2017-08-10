@@ -90,7 +90,7 @@ socket.on("playerAddedStart", function (players) {
 });
 socket.on("gameStarted", function () {
     $(".modal").hide();
-    console.log();
+   
     $("#chatInput").focus();
     AddChatMessage(2, "Game Starting!");
     $.titleAlert("Game Started!", {
