@@ -265,6 +265,8 @@ function doGuess(guess, username) {
     if (guess.length == game.currentWordSolved.length && game.canGuess) {
         if (guess.toLowerCase() == game.currentWordSolved) {
             game.currentWord = game.currentWordSolved;
+            game.canGuess = false;
+            
             sendWordToClient();
             roundWin(username);
         }
