@@ -302,7 +302,7 @@ function AddChatMessage(type, message) {
         scrollTop: scrollerHeight
     }, "slow");
 
-    $(".modal-chat").animate({
+    $("#modal-chat-chatWrapper").animate({
         scrollTop: scrollerHeight
     }, "slow");
 }
@@ -313,6 +313,7 @@ function screenSwitcher(screen) {
     $(".screen").hide();
 }
 
+//handles enabling/disabling turn elements (drawing or not)
 function notMyTurn(turn) {
     myTurn = turn;
 

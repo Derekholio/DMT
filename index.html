@@ -35,20 +35,20 @@
 
     <div id="containeer">
         <div id="top">
-            <img src="css/dmt.jpg" height="90%" /> <h3>DMT</h3>
+            <img src="css/dmt.jpg" height="90%" />
+            <h3>DMT</h3>
         </div>
         <div id="mid">
             <div id="toolbarContainer">
                 <div id="iconContainer" class="infoBox turn">
-                    Context: 
+                    Context:
                     <select id="contextSelector">
                         <option value="foreground">foreground</option>
                         <option value="background">background</option>
                     </select>
                     <br><br>
                     <div id="colorWheel"></div>
-                    <br>
-                    Size:
+                    <br> Size:
                     <select id="penSize">
                         <option value="2">2</option>
                         <option value="4">4</option>
@@ -82,8 +82,12 @@
             </div>
 
             <div id="chatContainer">
-                <div id="usersOnline"></div>
-                <div class="playersnpoints"></div>
+                <div id="pointsContainer">
+                    <b>Points</b><br>
+                    <div class="playersnpoints"></div>
+                </div>
+
+                
                 <div id="chat">
                     <ul class="chatScroller">
                     </ul>
@@ -102,7 +106,7 @@
     <!-- The Modal -->
     <div id="myModal" class="modal">
 
-      
+
         <div class="modal-content">
             <div id="modal-playerList">
                 <h3>Players</h3>
@@ -119,16 +123,19 @@
             </div>
 
             <div class="modal-chat">
-                <ul class="chatScroller">
-                </ul>
-            </div>
+                <div id="modal-chat-chatWrapper">
+                    <ul class="chatScroller">
+                    </ul>
+                </div>
+            
 
             <form action="" id="modal-chatInputForm" autocomplete="off">
                 <input type="text" id="modal-chatInput" placeholder="Chat" />
             </form>
+            </div>
         </div>
 
-    </div> 
+    </div>
 </body>
 
 </html>
