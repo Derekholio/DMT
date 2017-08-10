@@ -238,7 +238,7 @@ function updatePlayerTurn() {
 
     if (game.currentPlayer == null) {
         if (game.endlessMode) {
-            
+
             game.players.forEach(function(player){
                 player.hasDrawn = false;
             });
@@ -488,8 +488,13 @@ function guessLetter() {
                 game.currentWord = game.currentWord.setCharAt(x, guess.toLowerCase());
                 sendWordToClient();
             } else {
-                guessLetter();
-                break;
+
+                if(game.currentWord == game.currentWordSolved) {
+                    break;
+                } else {
+                    guessLetter();
+                    break;
+                }
             }
         }
     }
