@@ -47,6 +47,7 @@ io.on('connection', function (socket) {
         username: Sentencer.make("{{adjective}} {{noun}}"),
         socket: socket.id,
         isPlaying: false,
+        hasDrawn: false,
         drawing: false,
         points: 0,
         wins: 0
@@ -154,6 +155,8 @@ function startGame(event) {
     game.players.forEach(function (player) {
         player.points = 0;
         player.isPlaying = true;
+        player.hasDrawn = false;
+        player.drawing = false;
     });
 
     io.emit("gameStarted");
@@ -171,9 +174,32 @@ function getTime() {
 }
 
 function updatePlayerTurn() {
-    game.currentTurn += 1;
+    //game.currentTurn += 1;
+    if (game.currentPlayer != null) {
+        game.currentPlayer.drawing = false;
+        game.currentPlayer.hasDrawn = true;
+    }
 
+    game.currentPlayer = null;
 
+    game.players.forEach(function (player) {
+        if (player.hasDrawn == false && player.isPlaying) {
+            game.currentPlayer = player;
+        }
+    });
+
+    if (game.currentPlayer == null) {
+        console.log("game ended");
+        endGame();
+    } else {
+        game.currentPlayer.drawing = true;
+        io.emit("nextTurnPlayer", {
+            who: game.currentPlayer.username
+        });
+        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
+    }
+
+/*
     if (game.currentTurn >= game.players.length) {
         console.log(game.currentTurn, game.players.length);
         console.log("game ended");
@@ -192,7 +218,7 @@ function updatePlayerTurn() {
             who: game.currentPlayer.username
         });
         io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
-    }
+    }*/
 }
 
 function doGuess(guess, username) {
@@ -250,7 +276,7 @@ function endGame() {
 
     game.players.forEach(function (player) {
         player.isPlaying = true;
-        
+
         if (player.points > winner.score) {
             winner.player = player;
             winner.score = player.points;
