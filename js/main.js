@@ -72,7 +72,7 @@ socket.on('contentUpdate', function (content) {
     });
 });
 
-
+console.log();
 socket.on("playerAddedStart", function (players) {
     $("#playersToStart").html("");
 
