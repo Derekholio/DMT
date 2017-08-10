@@ -312,9 +312,9 @@ function endGame() {
     };
 
     game.players.forEach(function (player) {
-        player.isPlaying = true;
+        //player.isPlaying = true;
 
-        if (player.points > winner.score) {
+        if (player.points > winner.score && player.isPlaying) {
             winner.player = player;
             winner.score = player.points;
         }
@@ -428,6 +428,7 @@ function newRound() {
 
 
     }
+    
     game.currentWord = "";
     game.currentWordSolved = "";
     drawHistory = [];
