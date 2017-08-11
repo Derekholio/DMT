@@ -77,13 +77,15 @@ io.on('connection', function (socket) {
         inProgress: game.inProgress
     };
 
+    //sends username and progress to client
+    socket.emit('init', initPayload);
+
     //if the game is in progress we also send the word to client
     if (game.inProgress) {
         sendWordToClient();
         sendGameMode();
     }
-    //sends username and progress to client
-    socket.emit('init', initPayload);
+
 
 
     //sendWinnersList();
