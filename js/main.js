@@ -16,7 +16,7 @@ var game = {
         "REGULAR": 1,
         "ENDLESS": 2
     }
-}
+};
 
 socket.on('connect', function () {
     AddChatMessage(2, "Connected!");
