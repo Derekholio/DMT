@@ -11,6 +11,13 @@ var userCount;
 var timer;
 var scrollerHeight = 900;
 
+var game = {
+    modes: {
+        "REGULAR": 1,
+        "ENDLESS": 2
+    }
+}
+
 socket.on('connect', function () {
     AddChatMessage(2, "Connected!");
 });
@@ -201,8 +208,10 @@ socket.on("drawHistory", function (history) {
 });
 
 
-socket.on("endlessMode", function(){
-    $("#endGameButtonEndless").show();
+socket.on("gameMode", function(mode){
+    if(mode == game.modes.ENDLESS){
+        $("#endGameButtonEndless").show();
+    }
 });
 
 
@@ -275,12 +284,12 @@ $(document).ready(function () {
 
     //start game button handler
     $("#startGameButton").click(function () {
-        socket.emit("startGame");
+        socket.emit("startGame", {gameMode: game.modes.REGULAR});
     });
 
     //start game button handler for endless
     $("#startGameButtonEndless").click(function () {
-        socket.emit("startGame", {gameMode: "endless"});
+        socket.emit("startGame", {gameMode: game.modes.ENDLESS});
     });
 
 });

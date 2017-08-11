@@ -19,8 +19,14 @@ var game = {
     currentWordSolved: "",
     roundTimeout: 120,
     canGuess: false,
-    endlessMode: false
+    mode: null,
+    modes: {
+        "REGULAR": 1,
+        "ENDLESS": 2
+    }
 };
+
+
 
 var timers = {
     roundTimer: null,
@@ -58,7 +64,7 @@ io.on('connection', function (socket) {
     //forces players who join mid game to spectate
     if (!game.inProgress) {
         player.isPlaying = true;
-    } else if (game.inProgress && game.endlessMode) {
+    } else if (game.inProgress && game.mode == game.modes.ENDLESS) {
         player.isPlaying = true;
     }
 
@@ -88,7 +94,7 @@ io.on('connection', function (socket) {
     //if the game is in progress let everyone know someone joined and spectating
     if (game.inProgress) {
         var msg = {};
-        if (game.endlessMode) {
+        if (game.mode == game.modes.ENDLESS) {
             msg = {
                 text: player.username + " joined the game!"
             };
@@ -190,11 +196,9 @@ io.on('connection', function (socket) {
 //handles starting of the game and setting of initial variabes
 function startGame(event) {
 
-    if (event.gameMode == "endless") {
-        game.endlessMode = true;
-        io.emit("endlessMode");
-    }
-
+    game.mode = event.gameMode;
+    io.emit("gameMode", game.mode);
+    
     console.log("starting Game!");
     game.inProgress = true;
     clearTimers();
@@ -241,7 +245,7 @@ function updatePlayerTurn() {
     });
 
     if (game.currentPlayer == null) {
-        if (game.endlessMode) {
+        if (game.mode == game.modes.ENDLESS) {
 
             game.players.forEach(function(player){
                 player.hasDrawn = false;
@@ -340,7 +344,7 @@ function endGame() {
     clearTimers();
     game.inProgress = false;
     game.canGuess = false;
-    game.endlessMode = false;
+    game.mode = null;
 
     var winner = {
         player: null,
