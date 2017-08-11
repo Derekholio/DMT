@@ -80,6 +80,7 @@ io.on('connection', function (socket) {
     //if the game is in progress we also send the word to client
     if (game.inProgress) {
         sendWordToClient();
+        sendGameMode();
     }
     //sends username and progress to client
     socket.emit('init', initPayload);
@@ -201,7 +202,7 @@ io.on('connection', function (socket) {
 function startGame(event) {
 
     game.mode = event.gameMode;
-    io.emit("gameMode", game.mode);
+    sendGameMode();
 
     console.log("starting Game!");
     game.inProgress = true;
@@ -525,6 +526,10 @@ function findPlayerByUsername(username) {
     });
 
     return player;
+}
+
+function sendGameMode(){
+    io.emit("gameMode", game.mode);
 }
 
 
