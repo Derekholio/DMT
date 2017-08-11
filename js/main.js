@@ -211,6 +211,13 @@ socket.on("drawHistory", function (history) {
     });
 });
 
+socket.on("drawerMouseMove", function(mouse){
+        var w = canvas.self.width;
+    var h = canvas.self.height;
+    
+    
+    moveCursor(mouse.x*w, mouse.y*h);
+});
 
 socket.on("gameMode", function(mode){
     if(mode == game.modes.ENDLESS){
@@ -348,7 +355,9 @@ function notMyTurn(turn) {
         $("#contextSelector").prop( "disabled", false );
         $(".turn").show();
         $("#canvas").addClass("pencil");
+        $("#pn").hide();
     } else {
+        $("#pn").show();
         $("#contextSelector").prop( "disabled", true );
         $(".turn").hide();
         $("#canvas").removeClass("pencil");

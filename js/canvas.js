@@ -92,6 +92,9 @@ function onMouseMove(e) {
         return;
     }
 
+    var w = canvas.self.width;
+    var h = canvas.self.height;
+    socket.emit("drawerMouseMove", {"x": (e.clientX - canvas.mouseXOffset)/w, "y":(e.clientY - canvas.mouseYOffset)/h});
     if (!canvas.isDrawing) {
         return;
     }
@@ -104,6 +107,8 @@ function onDrawingEvent(data) {
     var w = canvas.self.width;
     var h = canvas.self.height;
     canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
+    
+    //moveCursor(data.x1*w, data.y1*h);
 }
 
 function onColorUpdate(e) {
@@ -152,3 +157,9 @@ function loadCanvas(el) {
 
 
 } 
+
+function moveCursor(x, y){
+    console.log(x,y);
+    var h = $("#pn").height();
+    $("#pn").css({top: y+h, left: x});
+}

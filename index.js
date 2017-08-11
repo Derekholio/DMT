@@ -180,11 +180,15 @@ io.on('connection', function (socket) {
         socket.broadcast.emit('drawing', data);
         drawHistory.push(data);
 
+
         if(drawHistory.length > 200){
             io.emit("disableBackgroundChange");
         }
     });
 
+    socket.on("drawerMouseMove" , function(mouse){
+        io.emit("drawerMouseMove", mouse);
+    });
 
     //on game start request (button clicked)
     socket.on("startGame", startGame);
