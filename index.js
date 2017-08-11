@@ -301,6 +301,7 @@ function doGuess(guess, username) {
             game.currentWord = game.currentWordSolved;
             game.canGuess = false;
 
+            clearTimers();
             sendWordToClient();
             roundWin(username);
         }
