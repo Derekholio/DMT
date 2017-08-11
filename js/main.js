@@ -101,6 +101,10 @@ socket.on("playerAddedStart", function (players) {
 });
 
 
+socket.on("disableBackgroundChange", function(){
+    $("#contextSelector").prop( "disabled", true );
+});
+
 //listens for when the game is started
 socket.on("gameStarted", function () {
     $(".modal").hide();
@@ -341,9 +345,11 @@ function notMyTurn(turn) {
     myTurn = turn;
 
     if (turn) {
+        $("#contextSelector").prop( "disabled", false );
         $(".turn").show();
         $("#canvas").addClass("pencil");
     } else {
+        $("#contextSelector").prop( "disabled", true );
         $(".turn").hide();
         $("#canvas").removeClass("pencil");
     }

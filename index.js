@@ -176,6 +176,10 @@ io.on('connection', function (socket) {
     socket.on('drawing', function (data) {
         socket.broadcast.emit('drawing', data);
         drawHistory.push(data);
+
+        if(drawHistory.length > 200){
+            io.emit("disableBackgroundChange");
+        }
     });
 
 
@@ -198,7 +202,7 @@ function startGame(event) {
 
     game.mode = event.gameMode;
     io.emit("gameMode", game.mode);
-    
+
     console.log("starting Game!");
     game.inProgress = true;
     clearTimers();
