@@ -17,7 +17,7 @@ var game = {
     currentPlayer: null,
     currentWord: "",
     currentWordSolved: "",
-    roundTimeout: 120,
+    roundTimeout: 15,
     canGuess: false,
     mode: null,
     modes: {
@@ -30,7 +30,8 @@ var game = {
 
 var timers = {
     roundTimer: null,
-    letterTimer: null
+    letterTimer: null,
+    roundTimeLeft: 0
 };
 
 //HAndles Node server web page serving.  Currently Not used.
@@ -454,10 +455,12 @@ function newRound() {
     if (game.inProgress) {
         sendplayersnpoints();
 
-        timers.roundTimer = setTimeout(function () {
+        /*timers.roundTimer = setTimeout(function () {
             roundWin("Nobody");
             //newRound();
-        }, game.roundTimeout * 1000);
+        }, game.roundTimeout * 1000);*/
+
+        roundTimer(game.roundTimeout);
 
         timers.letterTimer = setTimeout(function () {
             guessLetter();
@@ -473,10 +476,7 @@ function newRound() {
         }, (game.roundTimeout / 2) * 1000);
 
         io.emit("newRound", game.roundTimeout);
-
         game.canGuess = true;
-
-
 
     }
 
@@ -536,6 +536,22 @@ function findPlayerByUsername(username) {
 
 function sendGameMode(){
     io.emit("gameMode", game.mode);
+}
+
+function roundTimer(time) {
+    clearInterval(timers.roundTimer);
+
+    timers.roundTimeLeft = time;
+
+    timers.roundTimer = setInterval(function(){
+        timers.roundTimeLeft--;
+
+        if(timers.roundTimeLeft <= 0){
+            clearInterval(timers.roundTimer);
+            roundWin("Nobody");
+        }
+    }, 1000);
+
 }
 
 

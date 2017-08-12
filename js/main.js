@@ -33,6 +33,7 @@ socket.on("init", function (data) {
 
     if (data.inProgress) {
         $(".modal").hide();
+        notMyTurn(false);
     } else {
         $("#modal-playerList").show();
     }
@@ -389,6 +390,8 @@ function countDownTimer(time) {
 
 function resetInterface(){
     $("#canvas").removeClass("pencil");
+    notMyTurn(false);
+    $("#pn").hide();
     $(".turn").hide();
     $("#endGameButtonEndless").hide();
     $("#modal-winner").hide();
