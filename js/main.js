@@ -58,7 +58,7 @@ socket.on('chatMessage', function (msg) {
 //listens for user count updates
 socket.on('userCount', function (count) {
     userCount = count;
-    $("#usersOnline").text(userCount + " Users");
+   // $("#usersOnline").text(userCount + " Users");
 });
 
 //listens for when the word was solved
@@ -66,22 +66,6 @@ socket.on("wordAnswer", function (data) {
     AddChatMessage(2, "The word was " + data);
 });
 
-//listens for content updates from server
-socket.on('contentUpdate', function (content) {
-    // screenSwitcher(content.type);
-    //sets mouse0 to canvas0, due to margins
-
-    canvas.history = content.history;
-
-    //set timeout because the resource has a load delay. if image error then erase.
-    //canvas.context.clearRect(0, 0, canvas.self.width, canvas.self.height);
-    canvas.clearScreen();
-
-    canvas.history.forEach(function (item) {
-        console.log("Drawing line");
-        canvas.drawLine(item.x0, item.y0, item.x1, item.y1, item.color, item.lineWidth, false);
-    });
-});
 
 
 //listens for playerlist from server.  updates modal playerlist

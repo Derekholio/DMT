@@ -251,7 +251,7 @@ function updatePlayerTurn() {
     game.currentPlayer = null;
 
     game.players.forEach(function (player) {
-        if (player.hasDrawn == false && player.isPlaying) {
+        if (player.hasDrawn == false && player.isPlaying && game.currentPlayer == null) {
             game.currentPlayer = player;
         }
     });
@@ -276,26 +276,6 @@ function updatePlayerTurn() {
         io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
     }
 
-    /*
-        if (game.currentTurn >= game.players.length) {
-            console.log(game.currentTurn, game.players.length);
-            console.log("game ended");
-            endGame();
-        } else if (!game.players[game.currentTurn].isPlaying) {
-            updatePlayerTurn();
-        } else {
-            if (game.currentTurn > 0) {
-                game.players[game.currentTurn - 1].drawing = false;
-            }
-
-            game.currentPlayer = game.players[game.currentTurn];
-            game.currentPlayer.drawing = true;
-
-            io.emit("nextTurnPlayer", {
-                who: game.currentPlayer.username
-            });
-            io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
-        }*/
 }
 
 
