@@ -18,8 +18,14 @@ var game = {
     }
 };
 
+var messageType = {
+    "REG": 1,
+    "BOLD": 2,
+    "RED": 3
+}
+
 socket.on('connect', function () {
-    AddChatMessage(2, "Connected!");
+    AddChatMessage(messageType.BOLD, "Connected!");
 });
 
 //Drawing Event
@@ -42,17 +48,17 @@ socket.on("init", function (data) {
 
 //listens if we get disconnected from server
 socket.on('disconnect', function () {
-    AddChatMessage(2, "Disconnected From Server!");
+    AddChatMessage(messageType.BOLD, "Disconnected From Server!");
 });
 
 //listens if we are attempting to reconnect to server
 socket.on('reconnecting', function () {
-    AddChatMessage(1, "Attempting to Connect...");
+    AddChatMessage(messageType.REG, "Attempting to Connect...");
 });
 
 //listens for chat message feedback from server.
 socket.on('chatMessage', function (msg) {
-    AddChatMessage(1, msg.text);
+    AddChatMessage(messageType.REG, msg.text);
 });
 
 //listens for user count updates
@@ -63,7 +69,7 @@ socket.on('userCount', function (count) {
 
 //listens for when the word was solved
 socket.on("wordAnswer", function (data) {
-    AddChatMessage(2, "The word was " + data);
+    AddChatMessage(messageType.BOLD, "The word was " + data);
 });
 
 
@@ -95,7 +101,7 @@ socket.on("gameStarted", function () {
     $(".modal").hide();
    
     $("#chatInput").focus();
-    AddChatMessage(2, "Game Starting!");
+    AddChatMessage(messageType.BOLD, "Game Starting!");
     $.titleAlert("Game Started!", {
         requireBlur: true,
         stopOnFocus: true
@@ -117,12 +123,12 @@ socket.on("newRound", function (data) {
 //listens for when round was won
 socket.on("roundWin", function (data) {
     clearInterval(timer);
-    AddChatMessage(2, data + " won the round!");
+    AddChatMessage(messageType.BOLD, data + " won the round!");
 });
 
 //listens for next player update
 socket.on("nextTurnPlayer", function (data) {
-    AddChatMessage(3, "It's " + data.who + "'s turn to draw!");
+    AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
 
     notMyTurn(false);
 });
@@ -214,7 +220,7 @@ socket.on("gameMode", function(mode){
 //listens for game winner, shows modal again
 socket.on("winner", function (winner) {
     clearInterval(timer);
-    AddChatMessage(2, winner.player.username + " won with " + winner.player.points + " points!");
+    AddChatMessage(messageType.BOLD, winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-playerList").hide();
     $("#modal-winner").show();
@@ -312,11 +318,11 @@ function chatMessage(message) {
 //Adds parameter message to the chat scroller
 function AddChatMessage(type, message) {
 
-    if (type == 1) {
+    if (type == messageType.REG) {
         $(".chatScroller").append($('<li>').text(message));
-    } else if (type == 2) {
+    } else if (type == messageType.BOLD) {
         $(".chatScroller").append($('<li class="b">').text(message));
-    } else if (type == 3) {
+    } else if (type == messageType.RED) {
         $(".chatScroller").append($('<li class="red">').text(message));
     }
 
