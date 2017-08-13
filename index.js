@@ -17,7 +17,7 @@ var game = {
     currentPlayer: null,
     currentWord: "",
     currentWordSolved: "",
-    roundTimeout: 15,
+    roundTimeout: 150,
     canGuess: false,
     mode: null,
     modes: {
