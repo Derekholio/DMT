@@ -157,6 +157,7 @@ html {
     width:32px;
     z-index:1000;
     display:none;
+    pointer-events: none;
 }
 
 .modal-chat {

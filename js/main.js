@@ -147,7 +147,7 @@ socket.on("yourTurn", function (data) {
         stopOnFocus: true
     });
 
-    $('#canvas').css( 'cursor', 'url('+data.cursor+'), auto' );
+    //$('#canvas').css( 'cursor', 'url('+data.cursor+'), auto' );
     notMyTurn(true);
 });
 
@@ -184,6 +184,7 @@ socket.on("winnersList", function (data) {
 //listens for when the game has ended
 socket.on("gameEnded", function () {
     notMyTurn(false);
+    $("#pn").hide();
     $("#endGameButtonEndless").hide();
     $("#modal-winner").hide();
     $("#modal-playerList").show();
@@ -357,7 +358,8 @@ function notMyTurn(turn) {
         $("#contextSelector").prop( "disabled", false );
         $(".turn").show();
         //$("#canvas").addClass("pencil");
-        $("#pn").hide();
+        //$("#pn").hide();
+        $("#pn").show();
     } else {
         $("#pn").show();
         $("#contextSelector").prop( "disabled", true );
@@ -399,5 +401,5 @@ function resetInterface(){
     $("#modal-winner").hide();
     $("#modal-playerList").show();
     $(".modal").show();
-    $("#canvas").css('cursor', 'default');
+    //$("#canvas").css('cursor', 'default');
 }
