@@ -229,9 +229,10 @@ socket.on("gameMode", function(mode){
 
 //listens for game winner, shows modal again
 socket.on("winner", function (winner) {
-    clearInterval(timer);
+     clearInterval(timer);
     AddChatMessage(messageType.BOLD, winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
+    $("#pn").hide();
     $("#modal-playerList").hide();
     $("#modal-winner").show();
     $(".modal").show();

@@ -54,7 +54,7 @@ http.listen(port, function () {
 
 //Listens for socket connection event.  Once connected we attach our logic listeners.  Also handles initial connection stuff
 io.on('connection', function (socket) {
-    console.log("connection established");
+    console.log("["+ socket.id +"] NEW CONNECTION: "+ socket.request.connection.remoteAddress);
     userCount += 1;
     
     //setsup temporary player object
@@ -159,7 +159,7 @@ io.on('connection', function (socket) {
 
     //on message from chat
     socket.on('chatMessage', function (msg) {
-        console.log("Chat Message", msg);
+        console.log("["+socket.id+ "] [CHAT MESSAGE]: ", msg);
 
         if (msg.text.length > 0) {
             var g = msg.text;
@@ -181,6 +181,7 @@ io.on('connection', function (socket) {
 
     //on client disconnect.  removes player and updates player list
     socket.on('disconnect', function () {
+        console.log("["+socket.id+"] DISCONNECTED");
         userCount -= 1;
 
         //removes player from games player queue
@@ -245,7 +246,7 @@ function startGame(event) {
     game.mode = event.gameMode;
     sendGameMode();
 
-    console.log("starting Game!");
+    console.log("[GAME EVENT] GAME STARTING");
     game.inProgress = true;
     clearTimers();
 
@@ -276,6 +277,7 @@ function getTime() {
 
 //updates the players turn
 function updatePlayerTurn() {
+    console.log("[GAME EVENT] UPDATING PLAYER TURN");
     //game.currentTurn += 1;
     if (game.currentPlayer != null) {
         game.currentPlayer.drawing = false;
@@ -299,7 +301,6 @@ function updatePlayerTurn() {
 
             updatePlayerTurn();
         } else {
-            console.log("game ended");
             endGame();
         }
     } else {
@@ -372,6 +373,7 @@ function sendWordToClient() {
 
 //handles the ending of the game.  resets variables
 function endGame() {
+    console.log("[GAME EVENT] GAME ENDED");
     clearTimers();
     game.inProgress = false;
     game.canGuess = false;
@@ -419,6 +421,7 @@ function getNewWord() {
 
 //handles when a round is won.  Sends winner stuff to client
 function roundWin(username) {
+    console.log("[GAME EVENT] ROUND WON - "+username);
     var winner = {};
 
     if (username != "Nobody") {
@@ -469,6 +472,7 @@ function sendPlayersList() {
 
 //handles a new round
 function newRound() {
+    console.log("[GAME EVENT] NEW ROUND");
     clearTimers();
 
     if (game.inProgress) {
