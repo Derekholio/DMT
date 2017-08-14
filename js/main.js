@@ -130,7 +130,10 @@ socket.on("roundWin", function (data) {
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
 
+    $("#pn").attr("src", data.cursor);
+    
     notMyTurn(false);
+  
 });
 
 //tells individual user its their turn to draw
@@ -139,6 +142,8 @@ socket.on("yourTurn", function (data) {
         requireBlur: true,
         stopOnFocus: true
     });
+
+    $('#canvas').css( 'cursor', 'url('+data.cursor+'), auto' );
     notMyTurn(true);
 });
 
@@ -345,13 +350,14 @@ function notMyTurn(turn) {
     if (turn) {
         $("#contextSelector").prop( "disabled", false );
         $(".turn").show();
-        $("#canvas").addClass("pencil");
+        //$("#canvas").addClass("pencil");
         $("#pn").hide();
     } else {
         $("#pn").show();
         $("#contextSelector").prop( "disabled", true );
         $(".turn").hide();
-        $("#canvas").removeClass("pencil");
+        $("#canvas").css('cursor', 'default');
+       // $("#canvas").removeClass("pencil");
     }
 }
 

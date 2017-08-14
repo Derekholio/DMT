@@ -159,7 +159,7 @@ function loadCanvas(el) {
 } 
 
 function moveCursor(x, y){
-    console.log(x,y);
+
     var h = $("#pn").height();
     $("#pn").css({top: y-canvas.self.height, left: x});
 }

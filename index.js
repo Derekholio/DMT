@@ -10,6 +10,7 @@ var port = process.env.PORT || 8080;
 var userCount = 0;
 var drawHistory = [];
 
+//Game Object
 var game = {
     inProgress: false,
     players: [],
@@ -17,7 +18,7 @@ var game = {
     currentPlayer: null,
     currentWord: "",
     currentWordSolved: "",
-    roundTimeout: 15,
+    roundTimeout: 150,
     canGuess: false,
     mode: null,
     modes: {
@@ -26,13 +27,15 @@ var game = {
     }
 };
 
-
-
+//timers object
 var timers = {
     roundTimer: null,
     letterTimer: null,
     roundTimeLeft: 0
 };
+
+var cursorsDirectory = "css/cursors/";
+var cursors = ["cursor1.cur", "cursor2.cur", "cursor3.cur", "cursor4.cur", "cursor5.cur", "pencil.cur"];
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
@@ -59,7 +62,8 @@ io.on('connection', function (socket) {
         hasDrawn: false,
         drawing: false,
         points: 0,
-        wins: 0
+        wins: 0,
+        cursor: getRandomCursor()
     };
 
     //forces players who join mid game to spectate
@@ -270,10 +274,13 @@ function updatePlayerTurn() {
         }
     } else {
         game.currentPlayer.drawing = true;
+
         io.emit("nextTurnPlayer", {
-            who: game.currentPlayer.username
+            who: game.currentPlayer.username,
+            cursor: game.currentPlayer.cursor
         });
-        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
+
+        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', {cursor: game.currentPlayer.cursor});
     }
 
 }
@@ -534,6 +541,13 @@ function roundTimer(time) {
 
 }
 
+function getRandomCursor(){
+    var cursor = null;
+
+    cursor = cursorsDirectory + cursors[Math.floor(Math.random()*cursors.length)];
+    console.log(cursor);
+    return cursor;
+}
 
 //third party setcharat function
 String.prototype.setCharAt = function (index, chr) {
