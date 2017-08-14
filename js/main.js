@@ -22,7 +22,7 @@ var messageType = {
     "REG": 1,
     "BOLD": 2,
     "RED": 3
-}
+};
 
 socket.on('connect', function () {
     AddChatMessage(messageType.BOLD, "Connected!");
@@ -35,10 +35,14 @@ socket.on('drawing', onDrawingEvent);
 socket.on("init", function (data) {
     username = data.username;
     console.log(username);
-    resetInterface();
+    //resetInterface();
 
     if (data.inProgress) {
         $(".modal").hide();
+
+        $("#pn").attr("src", data.cursor);
+        countDownTimer(data.roundTimeLeft);
+
         notMyTurn(false);
     } else {
         $("#modal-playerList").show();
@@ -179,6 +183,7 @@ socket.on("winnersList", function (data) {
 
 //listens for when the game has ended
 socket.on("gameEnded", function () {
+    notMyTurn(false);
     $("#endGameButtonEndless").hide();
     $("#modal-winner").hide();
     $("#modal-playerList").show();
@@ -393,4 +398,5 @@ function resetInterface(){
     $("#modal-winner").hide();
     $("#modal-playerList").show();
     $(".modal").show();
+    $("#canvas").css('cursor', 'default');
 }
