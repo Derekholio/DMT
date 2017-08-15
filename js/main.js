@@ -22,7 +22,7 @@ var messageType = {
     "REG": 1,
     "BOLD": 2,
     "RED": 3
-}
+};
 
 socket.on('connect', function () {
     AddChatMessage(messageType.BOLD, "Connected!");
@@ -35,10 +35,14 @@ socket.on('drawing', onDrawingEvent);
 socket.on("init", function (data) {
     username = data.username;
     console.log(username);
-    resetInterface();
+    //resetInterface();
 
     if (data.inProgress) {
         $(".modal").hide();
+
+        $("#pn").attr("src", data.cursor);
+        countDownTimer(data.roundTimeLeft);
+
         notMyTurn(false);
     } else {
         $("#modal-playerList").show();
@@ -130,7 +134,10 @@ socket.on("roundWin", function (data) {
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
 
+    $("#pn").attr("src", data.cursor);
+    
     notMyTurn(false);
+  
 });
 
 //tells individual user its their turn to draw
@@ -139,6 +146,8 @@ socket.on("yourTurn", function (data) {
         requireBlur: true,
         stopOnFocus: true
     });
+
+    //$('#canvas').css( 'cursor', 'url('+data.cursor+'), auto' );
     notMyTurn(true);
 });
 
@@ -174,6 +183,8 @@ socket.on("winnersList", function (data) {
 
 //listens for when the game has ended
 socket.on("gameEnded", function () {
+    notMyTurn(false);
+    $("#pn").hide();
     $("#endGameButtonEndless").hide();
     $("#modal-winner").hide();
     $("#modal-playerList").show();
@@ -219,9 +230,10 @@ socket.on("gameMode", function(mode){
 
 //listens for game winner, shows modal again
 socket.on("winner", function (winner) {
-    clearInterval(timer);
+     clearInterval(timer);
     AddChatMessage(messageType.BOLD, winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
+    $("#pn").hide();
     $("#modal-playerList").hide();
     $("#modal-winner").show();
     $(".modal").show();
@@ -345,13 +357,15 @@ function notMyTurn(turn) {
     if (turn) {
         $("#contextSelector").prop( "disabled", false );
         $(".turn").show();
-        $("#canvas").addClass("pencil");
-        $("#pn").hide();
+        //$("#canvas").addClass("pencil");
+        //$("#pn").hide();
+        $("#pn").show();
     } else {
         $("#pn").show();
         $("#contextSelector").prop( "disabled", true );
         $(".turn").hide();
-        $("#canvas").removeClass("pencil");
+        $("#canvas").css('cursor', 'default');
+       // $("#canvas").removeClass("pencil");
     }
 }
 
@@ -387,4 +401,5 @@ function resetInterface(){
     $("#modal-winner").hide();
     $("#modal-playerList").show();
     $(".modal").show();
+    //$("#canvas").css('cursor', 'default');
 }

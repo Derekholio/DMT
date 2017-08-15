@@ -1,7 +1,10 @@
 //Node Variables
 var app = require('express')();
 var http = require('http').Server(app);
-var io = require('socket.io')(http, {'pingInterval':1000, 'pingTimeout':5000});
+var io = require('socket.io')(http, {
+    'pingInterval': 1000,
+    'pingTimeout': 5000
+});
 var Sentencer = require("sentencer");
 
 var port = process.env.PORT || 8080;
@@ -10,6 +13,7 @@ var port = process.env.PORT || 8080;
 var userCount = 0;
 var drawHistory = [];
 
+//Game Object
 var game = {
     inProgress: false,
     players: [],
@@ -26,13 +30,15 @@ var game = {
     }
 };
 
-
-
+//timers object
 var timers = {
     roundTimer: null,
     letterTimer: null,
     roundTimeLeft: 0
 };
+
+var cursorsDirectory = "css/cursors/";
+var cursors = ["skeleton.gif","spinner.gif", "horse.gif", "court.png", "pencil.cur"];
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
@@ -48,9 +54,9 @@ http.listen(port, function () {
 
 //Listens for socket connection event.  Once connected we attach our logic listeners.  Also handles initial connection stuff
 io.on('connection', function (socket) {
-    console.log("connection established");
+    console.log("["+ socket.id +"] NEW CONNECTION: "+ socket.request.connection.remoteAddress);
     userCount += 1;
-
+    
     //setsup temporary player object
     var player = {
         username: Sentencer.make("{{adjective}} {{noun}}"),
@@ -59,9 +65,17 @@ io.on('connection', function (socket) {
         hasDrawn: false,
         drawing: false,
         points: 0,
-        wins: 0
+        wins: 0,
+        cursor: getRandomCursor()
     };
 
+    var initPayload = {
+        username: player.username,
+        inProgress: game.inProgress
+    };
+
+    var msg = {text: player.username + " joined the game!"};
+/*
     //forces players who join mid game to spectate
     if (!game.inProgress) {
         player.isPlaying = true;
@@ -72,25 +86,19 @@ io.on('connection', function (socket) {
     //adds temp player object to games player queue
     game.players.push(player);
 
-    //inits inital client information
-    var initPayload = {
-        username: player.username,
-        inProgress: game.inProgress
-    };
-
-    //sends username and progress to client
-    socket.emit('init', initPayload);
-
     //if the game is in progress we also send the word to client
     if (game.inProgress) {
+
+        initPayload.roundTimeLeft = timers.roundTimeLeft;
+        initPayload.cursor = game.currentPlayer.cursor;
+
+        socket.emit('init', initPayload);
         sendWordToClient();
         sendGameMode();
+    } else {
+        socket.emit('init', initPayload);
     }
 
-
-
-    //sendWinnersList();
-    //io.emit("playerAddedStart", game.players);
 
     //sends player list to client, for modal
     sendPlayersList();
@@ -108,8 +116,34 @@ io.on('connection', function (socket) {
             };
         }
         io.emit("chatMessage", msg);
+    }*/
+
+    //new   
+    if (game.inProgress) {
+        if(game.mode == game.modes.ENDLESS){
+            player.isPlaying = true;
+        } else {
+            msg = {
+                text: player.username + " joined the game! (SPECTATING)"
+            };
+        }
+
+        initPayload.roundTimeLeft = timers.roundTimeLeft;
+        initPayload.cursor = game.currentPlayer.cursor;
+
+        socket.emit('init', initPayload);
+        sendWordToClient();
+        sendGameMode();
+
+    } else {
+        player.isPlaying = true;
+        socket.emit('init', initPayload);
     }
 
+    io.emit("chatMessage", msg);
+    game.players.push(player);
+    sendPlayersList();
+    
     //emits usercount to be displayed on page.  May replace with inital start payload
     io.emit('userCount', userCount);
 
@@ -125,7 +159,7 @@ io.on('connection', function (socket) {
 
     //on message from chat
     socket.on('chatMessage', function (msg) {
-        console.log("Chat Message", msg);
+        console.log("["+socket.id+ "] [CHAT MESSAGE]: ", msg);
 
         if (msg.text.length > 0) {
             var g = msg.text;
@@ -147,6 +181,7 @@ io.on('connection', function (socket) {
 
     //on client disconnect.  removes player and updates player list
     socket.on('disconnect', function () {
+        console.log("["+socket.id+"] DISCONNECTED");
         userCount -= 1;
 
         //removes player from games player queue
@@ -159,7 +194,7 @@ io.on('connection', function (socket) {
             }
         });
 
-        if(game.players.length == 0 && game.inProgress){
+        if (game.players.length == 0 && game.inProgress) {
             endGame();
         }
 
@@ -182,12 +217,12 @@ io.on('connection', function (socket) {
         drawHistory.push(data);
 
 
-        if(drawHistory.length > 200){
+        if (drawHistory.length > 200) {
             io.emit("disableBackgroundChange");
         }
     });
 
-    socket.on("drawerMouseMove" , function(mouse){
+    socket.on("drawerMouseMove", function (mouse) {
         io.emit("drawerMouseMove", mouse);
     });
 
@@ -211,7 +246,7 @@ function startGame(event) {
     game.mode = event.gameMode;
     sendGameMode();
 
-    console.log("starting Game!");
+    console.log("[GAME EVENT] GAME STARTING");
     game.inProgress = true;
     clearTimers();
 
@@ -242,6 +277,7 @@ function getTime() {
 
 //updates the players turn
 function updatePlayerTurn() {
+    console.log("[GAME EVENT] UPDATING PLAYER TURN");
     //game.currentTurn += 1;
     if (game.currentPlayer != null) {
         game.currentPlayer.drawing = false;
@@ -259,21 +295,25 @@ function updatePlayerTurn() {
     if (game.currentPlayer == null) {
         if (game.mode == game.modes.ENDLESS) {
 
-            game.players.forEach(function(player){
+            game.players.forEach(function (player) {
                 player.hasDrawn = false;
             });
 
             updatePlayerTurn();
         } else {
-            console.log("game ended");
             endGame();
         }
     } else {
         game.currentPlayer.drawing = true;
+
         io.emit("nextTurnPlayer", {
-            who: game.currentPlayer.username
+            who: game.currentPlayer.username,
+            cursor: game.currentPlayer.cursor
         });
-        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', true);
+
+        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', {
+            cursor: game.currentPlayer.cursor
+        });
     }
 
 }
@@ -333,6 +373,7 @@ function sendWordToClient() {
 
 //handles the ending of the game.  resets variables
 function endGame() {
+    console.log("[GAME EVENT] GAME ENDED");
     clearTimers();
     game.inProgress = false;
     game.canGuess = false;
@@ -380,6 +421,7 @@ function getNewWord() {
 
 //handles when a round is won.  Sends winner stuff to client
 function roundWin(username) {
+    console.log("[GAME EVENT] ROUND WON - "+username);
     var winner = {};
 
     if (username != "Nobody") {
@@ -430,6 +472,7 @@ function sendPlayersList() {
 
 //handles a new round
 function newRound() {
+    console.log("[GAME EVENT] NEW ROUND");
     clearTimers();
 
     if (game.inProgress) {
@@ -489,7 +532,7 @@ function guessLetter() {
                 sendWordToClient();
             } else {
 
-                if(game.currentWord == game.currentWordSolved) {
+                if (game.currentWord == game.currentWordSolved) {
                     break;
                 } else {
                     guessLetter();
@@ -514,7 +557,7 @@ function findPlayerByUsername(username) {
     return player;
 }
 
-function sendGameMode(){
+function sendGameMode() {
     io.emit("gameMode", game.mode);
 }
 
@@ -523,10 +566,10 @@ function roundTimer(time) {
 
     timers.roundTimeLeft = time;
 
-    timers.roundTimer = setInterval(function(){
+    timers.roundTimer = setInterval(function () {
         timers.roundTimeLeft--;
 
-        if(timers.roundTimeLeft <= 0){
+        if (timers.roundTimeLeft <= 0) {
             clearInterval(timers.roundTimer);
             roundWin("Nobody");
         }
@@ -534,6 +577,13 @@ function roundTimer(time) {
 
 }
 
+function getRandomCursor() {
+    var cursor = null;
+
+    cursor = cursorsDirectory + cursors[Math.floor(Math.random() * cursors.length)];
+    console.log(cursor);
+    return cursor;
+}
 
 //third party setcharat function
 String.prototype.setCharAt = function (index, chr) {
