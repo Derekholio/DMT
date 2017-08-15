@@ -38,7 +38,7 @@ var timers = {
 };
 
 var cursorsDirectory = "css/cursors/";
-var cursors = ["skeleton.gif","spinner.gif", "horse.gif", "pencil.cur"];
+var cursors = ["skeleton.gif","spinner.gif", "horse.gif", "court.png", "pencil.cur"];
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
