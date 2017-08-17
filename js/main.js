@@ -10,11 +10,16 @@ var myTurn = false;
 var userCount;
 var timer;
 var scrollerHeight = 900;
+var player = null;
 
 var game = {
     modes: {
         "REGULAR": 1,
         "ENDLESS": 2
+    },
+    playerStates: {
+        "PLAYER": 1,
+        "SPECTATOR": 2
     }
 };
 
@@ -33,19 +38,26 @@ socket.on('drawing', onDrawingEvent);
 
 //listens for initial important data 
 socket.on("init", function (data) {
+    player = data;
     username = data.username;
     console.log(username);
     //resetInterface();
 
+    $("#username").text(username);
+    $("#modal-playerList").show();
+
     if (data.inProgress) {
-        $(".modal").hide();
+
+        $("#joinButtons").show();
+        // $(".modal").hide();
 
         $("#pn").attr("src", data.cursor);
         countDownTimer(data.roundTimeLeft);
 
         notMyTurn(false);
     } else {
-        $("#modal-playerList").show();
+        
+        $("#startButtons").show();
     }
 });
 
@@ -68,7 +80,7 @@ socket.on('chatMessage', function (msg) {
 //listens for user count updates
 socket.on('userCount', function (count) {
     userCount = count;
-   // $("#usersOnline").text(userCount + " Users");
+    // $("#usersOnline").text(userCount + " Users");
 });
 
 //listens for when the word was solved
@@ -87,24 +99,35 @@ socket.on("playerAddedStart", function (players) {
         for (x = 0; x < player.wins; x++) {
             medals += '<img src="css/gold_medal.png">';
         }
-        if (username == player.username) {
-            $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
+        if (player.ready) {
+            if(player.state == game.playerStates.PLAYER) {
+                $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
+            } else if(player.state == game.playerStates.SPECTATOR){
+                $("#playersToStart").append('<li class="list-group-item list-group-item-warning">' + player.username + " " + medals + '</li>');
+            }
+            
         } else {
-            $("#playersToStart").append('<li class="list-group-item">' + player.username + " " + medals + '</li>');
+            $("#playersToStart").append('<li class="list-group-item list-group-item-danger">' + player.username + " " + medals + '</li>');
         }
     });
 });
 
 
-socket.on("disableBackgroundChange", function(){
-    $("#contextSelector").prop( "disabled", true );
+socket.on("disableBackgroundChange", function () {
+    $("#contextSelector").prop("disabled", true);
 });
 
 //listens for when the game is started
 socket.on("gameStarted", function () {
-    $(".modal").hide();
+
+    if(player.ready){
+        $(".modal").hide();
+         $("#chatInput").focus();
+    } else {
+        $("#startButtons").hide();
+        $("#joinButtons").show();
+    }
    
-    $("#chatInput").focus();
     AddChatMessage(messageType.BOLD, "Game Starting!");
     $.titleAlert("Game Started!", {
         requireBlur: true,
@@ -135,9 +158,9 @@ socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
 
     $("#pn").attr("src", data.cursor);
-    
+
     notMyTurn(false);
-  
+
 });
 
 //tells individual user its their turn to draw
@@ -184,11 +207,17 @@ socket.on("winnersList", function (data) {
 //listens for when the game has ended
 socket.on("gameEnded", function () {
     notMyTurn(false);
+    clearInterval(timer);
     $("#pn").hide();
     $("#endGameButtonEndless").hide();
-    $("#modal-winner").hide();
-    $("#modal-playerList").show();
-    $(".modal").show();
+    $("#joinButtons").hide();
+    $("#startButtons").show();
+
+        $("#modal-winner").hide();
+        $("#modal-playerList").show();
+        $(".modal").show();
+    
+
 });
 
 //clears the canvas
@@ -213,16 +242,16 @@ socket.on("drawHistory", function (history) {
     });
 });
 
-socket.on("drawerMouseMove", function(mouse){
-        var w = canvas.self.width;
+socket.on("drawerMouseMove", function (mouse) {
+    var w = canvas.self.width;
     var h = canvas.self.height;
-    
-    
-    moveCursor(mouse.x*w, mouse.y*h);
+
+
+    moveCursor(mouse.x * w, mouse.y * h);
 });
 
-socket.on("gameMode", function(mode){
-    if(mode == game.modes.ENDLESS){
+socket.on("gameMode", function (mode) {
+    if (mode == game.modes.ENDLESS) {
         $("#endGameButtonEndless").show();
     }
 });
@@ -230,15 +259,18 @@ socket.on("gameMode", function(mode){
 
 //listens for game winner, shows modal again
 socket.on("winner", function (winner) {
-     clearInterval(timer);
+    clearInterval(timer);
     AddChatMessage(messageType.BOLD, winner.player.username + " won with " + winner.player.points + " points!");
-    $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
     $("#pn").hide();
+
+    if(player.ready){
+    $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
     $("#modal-playerList").hide();
     $("#modal-winner").show();
     $(".modal").show();
 
     $("#modal-chatInput").focus();
+    }
 });
 
 
@@ -248,6 +280,9 @@ $(document).ready(function () {
 
     //Loads All Canvas Variables and EVents (DRAWING)
     loadCanvas(document.getElementById("canvas"));
+
+    $('#ready').bootstrapToggle('off');
+    $('#spectate').bootstrapToggle('on');
 
     $("#colorWheel").farbtastic(colorCallback);
 
@@ -292,18 +327,44 @@ $(document).ready(function () {
     });
 
 
-    $("#endGameButtonEndless").click(function(){
+    $("#endGameButtonEndless").click(function () {
         socket.emit("endGame");
     });
 
     //start game button handler
     $("#startGameButton").click(function () {
-        socket.emit("startGame", {gameMode: game.modes.REGULAR});
+        socket.emit("startGame", {
+            gameMode: game.modes.REGULAR
+        });
     });
 
     //start game button handler for endless
     $("#startGameButtonEndless").click(function () {
-        socket.emit("startGame", {gameMode: game.modes.ENDLESS});
+        socket.emit("startGame", {
+            gameMode: game.modes.ENDLESS
+        });
+    });
+
+    $("#joinGame").click(function(){
+        socket.emit("joinGame");
+        $(".modal").hide();
+        player.ready = true;
+    });
+
+
+     $('#ready').change(function() {
+         socket.emit("playerReady", $(this).prop('checked'));
+         player.ready = $(this).prop('checked');
+    });
+
+    $('#spectate').change(function() {
+         socket.emit("playerPlayer", $(this).prop('checked'));
+         
+         if($(this).prop('checked')){
+             player.state = "player";
+         } else {
+             player.state = "spectator";
+         }
     });
 
 });
@@ -355,17 +416,17 @@ function notMyTurn(turn) {
     myTurn = turn;
 
     if (turn) {
-        $("#contextSelector").prop( "disabled", false );
+        $("#contextSelector").prop("disabled", false);
         $(".turn").show();
         //$("#canvas").addClass("pencil");
         //$("#pn").hide();
         $("#pn").show();
     } else {
         $("#pn").show();
-        $("#contextSelector").prop( "disabled", true );
+        $("#contextSelector").prop("disabled", true);
         $(".turn").hide();
         $("#canvas").css('cursor', 'default');
-       // $("#canvas").removeClass("pencil");
+        // $("#canvas").removeClass("pencil");
     }
 }
 
@@ -381,7 +442,7 @@ function countDownTimer(time) {
 
         if (timeleft <= 15) {
             $("#timer").effect("shake", {
-                distance: 5 + (15-timeleft)
+                distance: 5 + (15 - timeleft)
             });
         }
 
@@ -392,7 +453,7 @@ function countDownTimer(time) {
 }
 
 
-function resetInterface(){
+function resetInterface() {
     $("#canvas").removeClass("pencil");
     notMyTurn(false);
     $("#pn").hide();

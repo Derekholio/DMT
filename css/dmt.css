@@ -75,29 +75,6 @@ html {
     font-size: 1.5vw;
 }
 
-.color.black {
-    background-color: black;
-}
-
-.color.red {
-    background-color: red;
-}
-
-.color.green {
-    background-color: green;
-}
-
-.color.blue {
-    background-color: blue;
-}
-
-.color.yellow {
-    background-color: yellow;
-}
-
-.color.white {
-    background-color: white;
-}
 
 .infoBox p {
     text-align: center;
@@ -230,6 +207,10 @@ html {
     /* Could be more or less, depending on screen size */
 }
 
+
+.playButtons {
+    display:none;
+}
 
 /* The Close Button */
 

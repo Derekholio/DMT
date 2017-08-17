@@ -27,6 +27,10 @@ var game = {
     modes: {
         "REGULAR": 1,
         "ENDLESS": 2
+    },
+    playerStates: {
+        "PLAYER": 1,
+        "SPECTATOR": 2
     }
 };
 
@@ -38,7 +42,7 @@ var timers = {
 };
 
 var cursorsDirectory = "css/cursors/";
-var cursors = ["skeleton.gif","spinner.gif", "horse.gif", "court.png", "pencil.cur"];
+var cursors = ["skeleton.gif", "spinner.gif", "horse.gif", "court.png", "pencil.cur"];
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
@@ -54,9 +58,9 @@ http.listen(port, function () {
 
 //Listens for socket connection event.  Once connected we attach our logic listeners.  Also handles initial connection stuff
 io.on('connection', function (socket) {
-    console.log("["+ socket.id +"] NEW CONNECTION: "+ socket.request.connection.remoteAddress);
+    console.log("[" + socket.id + "] NEW CONNECTION: " + socket.request.connection.remoteAddress);
     userCount += 1;
-    
+
     //setsup temporary player object
     var player = {
         username: Sentencer.make("{{adjective}} {{noun}}"),
@@ -66,62 +70,67 @@ io.on('connection', function (socket) {
         drawing: false,
         points: 0,
         wins: 0,
-        cursor: getRandomCursor()
+        cursor: getRandomCursor(),
+        ready: false,
+        state: game.playerStates.PLAYER
     };
 
     var initPayload = {
         username: player.username,
-        inProgress: game.inProgress
+        inProgress: game.inProgress,
+        ready: player.ready
     };
 
-    var msg = {text: player.username + " joined the game!"};
-/*
-    //forces players who join mid game to spectate
-    if (!game.inProgress) {
-        player.isPlaying = true;
-    } else if (game.inProgress && game.mode == game.modes.ENDLESS) {
-        player.isPlaying = true;
-    }
-
-    //adds temp player object to games player queue
-    game.players.push(player);
-
-    //if the game is in progress we also send the word to client
-    if (game.inProgress) {
-
-        initPayload.roundTimeLeft = timers.roundTimeLeft;
-        initPayload.cursor = game.currentPlayer.cursor;
-
-        socket.emit('init', initPayload);
-        sendWordToClient();
-        sendGameMode();
-    } else {
-        socket.emit('init', initPayload);
-    }
-
-
-    //sends player list to client, for modal
-    sendPlayersList();
-
-    //if the game is in progress let everyone know someone joined and spectating
-    if (game.inProgress) {
-        var msg = {};
-        if (game.mode == game.modes.ENDLESS) {
-            msg = {
-                text: player.username + " joined the game!"
-            };
-        } else {
-            msg = {
-                text: player.username + " joined the game! (SPECTATING)"
-            };
+    var msg = {
+        text: player.username + " joined the game!"
+    };
+    /*
+        //forces players who join mid game to spectate
+        if (!game.inProgress) {
+            player.isPlaying = true;
+        } else if (game.inProgress && game.mode == game.modes.ENDLESS) {
+            player.isPlaying = true;
         }
-        io.emit("chatMessage", msg);
-    }*/
+
+        //adds temp player object to games player queue
+        game.players.push(player);
+
+        //if the game is in progress we also send the word to client
+        if (game.inProgress) {
+
+            initPayload.roundTimeLeft = timers.roundTimeLeft;
+            initPayload.cursor = game.currentPlayer.cursor;
+
+            socket.emit('init', initPayload);
+            sendWordToClient();
+            sendGameMode();
+        } else {
+            socket.emit('init', initPayload);
+        }
+
+
+        //sends player list to client, for modal
+        sendPlayersList();
+
+        //if the game is in progress let everyone know someone joined and spectating
+        if (game.inProgress) {
+            var msg = {};
+            if (game.mode == game.modes.ENDLESS) {
+                msg = {
+                    text: player.username + " joined the game!"
+                };
+            } else {
+                msg = {
+                    text: player.username + " joined the game! (SPECTATING)"
+                };
+            }
+            io.emit("chatMessage", msg);
+        }*/
 
     //new   
     if (game.inProgress) {
-        if(game.mode == game.modes.ENDLESS){
-            player.isPlaying = true;
+        if (game.mode == game.modes.ENDLESS) {
+            //player.isPlaying = true;
         } else {
             msg = {
                 text: player.username + " joined the game! (SPECTATING)"
@@ -136,14 +145,14 @@ io.on('connection', function (socket) {
         sendGameMode();
 
     } else {
-        player.isPlaying = true;
+        //player.isPlaying = true;
         socket.emit('init', initPayload);
     }
 
     io.emit("chatMessage", msg);
     game.players.push(player);
     sendPlayersList();
-    
+
     //emits usercount to be displayed on page.  May replace with inital start payload
     io.emit('userCount', userCount);
 
@@ -157,23 +166,43 @@ io.on('connection', function (socket) {
         endGame();
     });
 
+    socket.on("joinGame", function () {
+        if (game.inProgress) {
+            if (game.mode == game.modes.ENDLESS) {
+                var p = findPlayerBySocket(socket);
+
+                if (p.state == game.playerStates.PLAYER) {
+                    p.isPlaying = true;
+                }
+            }
+        }
+    });
+
     //on message from chat
     socket.on('chatMessage', function (msg) {
-        console.log("["+socket.id+ "] [CHAT MESSAGE]: ", msg);
+
+        console.log("[" + socket.id + "] [CHAT MESSAGE]: ", msg);
 
         if (msg.text.length > 0) {
             var g = msg.text;
             var status = "";
+            var p = findPlayerBySocket(socket);
 
-            if (!findPlayerByUsername(msg.username).isPlaying) {
-                status = "(SPECTATING) ";
+            /* if (!findPlayerByUsername(msg.username).isPlaying && game.inProgress) {
+                 status = "(SPECTATING) ";
+             }*/
+
+            if (p.state == game.playerStates.SPECTATOR && game.inProgress) {
+                status = "(SPECTATOR)";
+            } else if (p.state == game.playerStates.SPECTATOR && game.inProgress && !p.isPlaying) {
+                status = "(SPECTATOR)";
             }
 
-            msg.text = status + msg.username + ": " + msg.text;
+            msg.text = status + p.username + ": " + msg.text;
             io.emit('chatMessage', msg);
 
-            if (game.inProgress && findPlayerByUsername(msg.username).isPlaying) {
-                doGuess(g, msg.username);
+            if (game.inProgress && p.isPlaying) {
+                doGuess(g, p.username);
             }
 
         }
@@ -181,7 +210,7 @@ io.on('connection', function (socket) {
 
     //on client disconnect.  removes player and updates player list
     socket.on('disconnect', function () {
-        console.log("["+socket.id+"] DISCONNECTED");
+        console.log("[" + socket.id + "] DISCONNECTED");
         userCount -= 1;
 
         //removes player from games player queue
@@ -226,6 +255,23 @@ io.on('connection', function (socket) {
         io.emit("drawerMouseMove", mouse);
     });
 
+    socket.on("playerReady", function (status) {
+        findPlayerBySocket(socket).ready = status;
+        sendPlayersList();
+    });
+
+    socket.on("playerPlayer", function (status) {
+        var p = findPlayerBySocket(socket);
+
+        if (status) {
+            p.state = game.playerStates.PLAYER;
+        } else {
+            p.state = game.playerStates.SPECTATOR;
+        }
+
+        sendPlayersList();
+    });
+
     //on game start request (button clicked)
     socket.on("startGame", startGame);
 
@@ -255,7 +301,9 @@ function startGame(event) {
 
     game.players.forEach(function (player) {
         player.points = 0;
-        player.isPlaying = true;
+        if (player.ready && player.state == game.playerStates.PLAYER) {
+            player.isPlaying = true;
+        }
         player.hasDrawn = false;
         player.drawing = false;
     });
@@ -290,16 +338,27 @@ function updatePlayerTurn() {
         if (player.hasDrawn == false && player.isPlaying && game.currentPlayer == null) {
             game.currentPlayer = player;
         }
+
     });
 
     if (game.currentPlayer == null) {
         if (game.mode == game.modes.ENDLESS) {
+            var count = 0;
 
             game.players.forEach(function (player) {
                 player.hasDrawn = false;
+
+                if (player.isPlaying) {
+                    count++;
+                }
             });
 
-            updatePlayerTurn();
+            if (count > 0) {
+                updatePlayerTurn();
+            } else {
+                endGame();
+            }
+
         } else {
             endGame();
         }
@@ -390,19 +449,22 @@ function endGame() {
             winner.score = player.points;
         }
 
-        player.isPlaying = true;
+        player.isPlaying = false;
     });
 
     if (winner.player) {
         winner.player.wins += 1;
         io.emit("winner", winner);
+        setTimeout(function () {
+            io.emit("gameEnded");
+        }, 8000);
+    } else {
+        io.emit("gameEnded");
     }
 
     //sendWinnersList();
     sendPlayersList();
-    setTimeout(function () {
-        io.emit("gameEnded");
-    }, 8000);
+
 
     //game.currentTurn = -1;
     game.currentPlayer = null;
@@ -421,7 +483,7 @@ function getNewWord() {
 
 //handles when a round is won.  Sends winner stuff to client
 function roundWin(username) {
-    console.log("[GAME EVENT] ROUND WON - "+username);
+    console.log("[GAME EVENT] ROUND WON - " + username);
     var winner = {};
 
     if (username != "Nobody") {
@@ -462,7 +524,9 @@ function sendPlayersList() {
     game.players.forEach(function (player) {
         list.push({
             username: player.username,
-            wins: player.wins
+            wins: player.wins,
+            ready: player.ready,
+            state: player.state
         });
     });
 
@@ -550,6 +614,19 @@ function findPlayerByUsername(username) {
 
     game.players.forEach(function (item) {
         if (username == item.username) {
+            player = item;
+        }
+    });
+
+    return player;
+}
+
+//finds players by their socket id
+function findPlayerBySocket(socket) {
+    var player;
+
+    game.players.forEach(function (item) {
+        if (socket.id == item.socket) {
             player = item;
         }
     });
