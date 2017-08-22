@@ -6,8 +6,19 @@ var io = require('socket.io')(http, {
     'pingTimeout': 5000
 });
 var Sentencer = require("sentencer");
+var fs = require("fs");
 
 var port = process.env.PORT || 8080;
+
+var fileName = "./config.json";
+
+try{
+    var config = require(fileName);
+} catch(err){
+    console.log("Missing configuration file! (config.json)");
+    process.exit(0);
+}
+
 
 //DMT Variables
 var userCount = 0;
@@ -61,42 +72,45 @@ io.on('connection', function (socket) {
     console.log("[" + socket.id + "] NEW CONNECTION: " + socket.request.connection.remoteAddress);
     userCount += 1;
 
-    //setsup temporary player object
-    var player = {
-        username: Sentencer.make("{{adjective}} {{noun}}"),
-        socket: socket.id,
-        isPlaying: false,
-        hasDrawn: false,
-        drawing: false,
-        points: 0,
-        wins: 0,
-        cursor: getRandomCursor(),
-        ready: false,
-        state: game.playerStates.PLAYER
-    };
+    socket.on("init", function (data) {
+        //setsup temporary player object
 
-    var initPayload = {
-        username: player.username,
-        inProgress: game.inProgress,
-        ready: player.ready
-    };
+        var player = {
+            username: Sentencer.make("{{adjective}} {{noun}}"),
+            socket: socket.id,
+            isPlaying: false,
+            hasDrawn: false,
+            drawing: false,
+            points: 0,
+            wins: 0,
+            cursor: getRandomCursor(),
+            ready: false,
+            state: game.playerStates.PLAYER
+        };
 
-    var msg = {
-        text: player.username + " joined the game!"
-    };
-    /*
-        //forces players who join mid game to spectate
-        if (!game.inProgress) {
-            player.isPlaying = true;
-        } else if (game.inProgress && game.mode == game.modes.ENDLESS) {
-            player.isPlaying = true;
+        if(data.c != null){
+            //load player sq data
+            console.log(data.c);
         }
 
-        //adds temp player object to games player queue
-        game.players.push(player);
+        var initPayload = {
+            username: player.username,
+            inProgress: game.inProgress,
+            ready: player.ready
+        };
 
-        //if the game is in progress we also send the word to client
+        var msg = {
+            text: player.username + " joined the game!"
+        };
+       
         if (game.inProgress) {
+            if (game.mode == game.modes.ENDLESS) {
+                //player.isPlaying = true;
+            } else {
+                msg = {
+                    text: player.username + " joined the game! (SPECTATING)"
+                };
+            }
 
             initPayload.roundTimeLeft = timers.roundTimeLeft;
             initPayload.cursor = game.currentPlayer.cursor;
@@ -104,57 +118,19 @@ io.on('connection', function (socket) {
             socket.emit('init', initPayload);
             sendWordToClient();
             sendGameMode();
+
         } else {
+            //player.isPlaying = true;
             socket.emit('init', initPayload);
         }
 
-
-        //sends player list to client, for modal
+        io.emit("chatMessage", msg);
+        game.players.push(player);
         sendPlayersList();
 
-        //if the game is in progress let everyone know someone joined and spectating
-        if (game.inProgress) {
-            var msg = {};
-            if (game.mode == game.modes.ENDLESS) {
-                msg = {
-                    text: player.username + " joined the game!"
-                };
-            } else {
-                msg = {
-                    text: player.username + " joined the game! (SPECTATING)"
-                };
-            }
-            io.emit("chatMessage", msg);
-        }*/
-
-    //new   
-    if (game.inProgress) {
-        if (game.mode == game.modes.ENDLESS) {
-            //player.isPlaying = true;
-        } else {
-            msg = {
-                text: player.username + " joined the game! (SPECTATING)"
-            };
-        }
-
-        initPayload.roundTimeLeft = timers.roundTimeLeft;
-        initPayload.cursor = game.currentPlayer.cursor;
-
-        socket.emit('init', initPayload);
-        sendWordToClient();
-        sendGameMode();
-
-    } else {
-        //player.isPlaying = true;
-        socket.emit('init', initPayload);
-    }
-
-    io.emit("chatMessage", msg);
-    game.players.push(player);
-    sendPlayersList();
-
-    //emits usercount to be displayed on page.  May replace with inital start payload
-    io.emit('userCount', userCount);
+        //emits usercount to be displayed on page.  May replace with inital start payload
+        io.emit('userCount', userCount);
+    });
 
     //clears canvas event (cls button)
     socket.on("clearScreen", function () {

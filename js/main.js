@@ -30,6 +30,9 @@ var messageType = {
 };
 
 socket.on('connect', function () {
+
+    var c = getCookieValue("c");
+    socket.emit("init", {c: c});
     AddChatMessage(messageType.BOLD, "Connected!");
 });
 
@@ -463,4 +466,9 @@ function resetInterface() {
     $("#modal-playerList").show();
     $(".modal").show();
     //$("#canvas").css('cursor', 'default');
+}
+
+function getCookieValue(a) {
+    var b = document.cookie.match('(^|;)\\s*' + a + '\\s*=\\s*([^;]+)');
+    return b ? b.pop() : null;
 }
