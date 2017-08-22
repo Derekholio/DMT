@@ -32,7 +32,9 @@ var messageType = {
 socket.on('connect', function () {
 
     var c = getCookieValue("c");
-    socket.emit("init", {c: c});
+    socket.emit("init", {
+        c: c
+    });
     AddChatMessage(messageType.BOLD, "Connected!");
 });
 
@@ -42,11 +44,18 @@ socket.on('drawing', onDrawingEvent);
 //listens for initial important data 
 socket.on("init", function (data) {
     player = data;
+
+    if (player.loggedIn) {
+        $("#loginFields").hide();
+        $("#username").text(player.username);
+        $("#profileFields").show();
+    }
+
     username = data.username;
     console.log(username);
     //resetInterface();
 
-    $("#username").text(username);
+
     $("#modal-playerList").show();
 
     if (data.inProgress) {
@@ -59,7 +68,7 @@ socket.on("init", function (data) {
 
         notMyTurn(false);
     } else {
-        
+
         $("#startButtons").show();
     }
 });
@@ -96,19 +105,25 @@ socket.on("wordAnswer", function (data) {
 //listens for playerlist from server.  updates modal playerlist
 socket.on("playerAddedStart", function (players) {
     $("#playersToStart").html("");
+    var t = player;
 
     players.forEach(function (player) {
         var medals = "";
         for (x = 0; x < player.wins; x++) {
             medals += '<img src="css/gold_medal.png">';
         }
+
+        if (player.username == t.username) {
+            player.username += " (me)";
+        }
+
         if (player.ready) {
-            if(player.state == game.playerStates.PLAYER) {
+            if (player.state == game.playerStates.PLAYER) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
-            } else if(player.state == game.playerStates.SPECTATOR){
+            } else if (player.state == game.playerStates.SPECTATOR) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-warning">' + player.username + " " + medals + '</li>');
             }
-            
+
         } else {
             $("#playersToStart").append('<li class="list-group-item list-group-item-danger">' + player.username + " " + medals + '</li>');
         }
@@ -123,14 +138,14 @@ socket.on("disableBackgroundChange", function () {
 //listens for when the game is started
 socket.on("gameStarted", function () {
 
-    if(player.ready){
+    if (player.ready) {
         $(".modal").hide();
-         $("#chatInput").focus();
+        $("#chatInput").focus();
     } else {
         $("#startButtons").hide();
         $("#joinButtons").show();
     }
-   
+
     AddChatMessage(messageType.BOLD, "Game Starting!");
     $.titleAlert("Game Started!", {
         requireBlur: true,
@@ -216,10 +231,10 @@ socket.on("gameEnded", function () {
     $("#joinButtons").hide();
     $("#startButtons").show();
 
-        $("#modal-winner").hide();
-        $("#modal-playerList").show();
-        $(".modal").show();
-    
+    $("#modal-winner").hide();
+    $("#modal-playerList").show();
+    $(".modal").show();
+
 
 });
 
@@ -259,6 +274,36 @@ socket.on("gameMode", function (mode) {
     }
 });
 
+socket.on("login", function (data) {
+    console.log(data.result);
+    if (data.result) {
+        var c = data.secret;
+        document.cookie = "c=" + c;
+        location.reload();
+    }
+
+});
+
+socket.on("registerSuccess", function (data) {
+    var result = data.result;
+
+    if (result) {
+        $("#registerFields").toggle();
+        $('#statusMessage').removeClass("alert alert-success").removeClass("alert alert-danger");
+        if (player.loggedIn) {
+            $('#statusMessage').text("Settings Updated").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
+        } else {
+             $('#statusMessage').text("Success -- Please login").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
+        }
+    } else {
+        if (player.loggedIn) {
+             $('#statusMessage').text("Settings not Saved").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
+        } else {
+             $('#statusMessage').text("Use a different Username").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
+        }
+    }
+});
+
 
 //listens for game winner, shows modal again
 socket.on("winner", function (winner) {
@@ -266,13 +311,13 @@ socket.on("winner", function (winner) {
     AddChatMessage(messageType.BOLD, winner.player.username + " won with " + winner.player.points + " points!");
     $("#pn").hide();
 
-    if(player.ready){
-    $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
-    $("#modal-playerList").hide();
-    $("#modal-winner").show();
-    $(".modal").show();
+    if (player.ready) {
+        $("#modal-winner-winner").text(winner.player.username + " won with " + winner.player.points + " points!");
+        $("#modal-playerList").hide();
+        $("#modal-winner").show();
+        $(".modal").show();
 
-    $("#modal-chatInput").focus();
+        $("#modal-chatInput").focus();
     }
 });
 
@@ -348,26 +393,85 @@ $(document).ready(function () {
         });
     });
 
-    $("#joinGame").click(function(){
+    $("#joinGame").click(function () {
         socket.emit("joinGame");
         $(".modal").hide();
         player.ready = true;
     });
 
 
-     $('#ready').change(function() {
-         socket.emit("playerReady", $(this).prop('checked'));
-         player.ready = $(this).prop('checked');
+    $('#ready').change(function () {
+        socket.emit("playerReady", $(this).prop('checked'));
+        player.ready = $(this).prop('checked');
     });
 
-    $('#spectate').change(function() {
-         socket.emit("playerPlayer", $(this).prop('checked'));
-         
-         if($(this).prop('checked')){
-             player.state = "player";
-         } else {
-             player.state = "spectator";
-         }
+    $('#spectate').change(function () {
+        socket.emit("playerPlayer", $(this).prop('checked'));
+
+        if ($(this).prop('checked')) {
+            player.state = "player";
+        } else {
+            player.state = "spectator";
+        }
+    });
+
+    $("#editProfile, #registerButton").click(function (e) {
+        e.preventDefault();
+
+        if (player.loggedIn) {
+            $("#registerOnly").hide();
+            $("#modal-register-cursor").val(player.cursor);
+            $("#cursorPreview").attr("src", player.cursor);
+        } else {
+            $("#registerOnly").show();
+        }
+
+        $("#registerFields").toggle();
+    });
+
+    $("#logoutProfile").click(function () {
+        document.cookie = "c=-1";
+        location.reload();
+    });
+
+
+    $("#registerSubmitButton").click(function (e) {
+        e.preventDefault();
+
+
+        if (player.loggedIn) {
+            socket.emit("updatePlayerSettings", {
+                cursor: $("#modal-register-cursor").val()
+            });
+        } else {
+            if ($("#modal-register-username").length > 0 && $("#modal-register-password").length > 0) {
+                socket.emit("registerPlayer", {
+                    username: $("#modal-register-username").val(),
+                    password: $("#modal-register-password").val(),
+                    cursor: $("#modal-register-cursor").val()
+                });
+            }
+        }
+    });
+
+    $("#modal-register-cursor").change(function () {
+        $("#cursorPreview").attr("src", $(this).val());
+    });
+
+    $("#loginButton").click(function (e) {
+        e.preventDefault();
+        toggleReady(false);
+
+        if ($("#modal-login-username").val() != "" && $("#modal-login-password").val() != "") {
+            socket.emit("login", {
+                username: $("#modal-login-username").val(),
+                password: $("#modal-login-password").val()
+            });
+
+            $("#modal-login-username").val("");
+            $("#modal-login-password").val("");
+        }
+
     });
 
 });
@@ -471,4 +575,10 @@ function resetInterface() {
 function getCookieValue(a) {
     var b = document.cookie.match('(^|;)\\s*' + a + '\\s*=\\s*([^;]+)');
     return b ? b.pop() : null;
+}
+
+
+function toggleReady(ready) {
+    if (ready) $('#ready').bootstrapToggle('on');
+    else $('#ready').bootstrapToggle('off');
 }

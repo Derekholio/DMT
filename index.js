@@ -7,17 +7,32 @@ var io = require('socket.io')(http, {
 });
 var Sentencer = require("sentencer");
 var fs = require("fs");
-
+var mysql = require("mysql");
+var crypto = require('crypto');
 var port = process.env.PORT || 8080;
 
 var fileName = "./config.json";
 
-try{
+try {
     var config = require(fileName);
-} catch(err){
+} catch (err) {
     console.log("Missing configuration file! (config.json)");
-    process.exit(0);
+    throw err;
 }
+
+var con = mysql.createConnection({
+    host: config.host,
+    user: config.username,
+    password: config.password,
+    database: config.db
+});
+
+con.connect(function (err) {
+    if (err) throw err;
+});
+
+var algorithm = config.algo;
+var algorithmPassword = config.algoPassword;
 
 
 //DMT Variables
@@ -85,51 +100,74 @@ io.on('connection', function (socket) {
             wins: 0,
             cursor: getRandomCursor(),
             ready: false,
-            state: game.playerStates.PLAYER
+            state: game.playerStates.PLAYER,
+            loggedIn: false
         };
 
-        if(data.c != null){
-            //load player sq data
-            console.log(data.c);
+        if (data.c != null) {
+            var sql = "SELECT * FROM users WHERE SECRET = ?";
+            con.query(sql, [data.c], function (err, result) {
+                if (err) throw err;
+                if (result.length > 0) {
+                    console.log(result);
+                    player.loggedIn = true;
+
+                    player.username = result[0].USERNAME;
+                    player.wins = result[0].WINS;
+                    player.cursor = result[0].CURSORS;
+                }
+            });
+
+
         }
 
-        var initPayload = {
-            username: player.username,
-            inProgress: game.inProgress,
-            ready: player.ready
-        };
+        setTimeout(function () {
+            //asynch gods forgive me
 
-        var msg = {
-            text: player.username + " joined the game!"
-        };
-       
-        if (game.inProgress) {
-            if (game.mode == game.modes.ENDLESS) {
-                //player.isPlaying = true;
+            var initPayload = {
+                username: player.username,
+                inProgress: game.inProgress,
+                ready: player.ready,
+                loggedIn: player.loggedIn,
+                cursor: player.cursor
+            };
+
+            var msg = {
+                text: player.username + " joined the game!"
+            };
+
+            if (game.inProgress) {
+                if (game.mode == game.modes.ENDLESS) {
+                    //player.isPlaying = true;
+                } else {
+                    msg = {
+                        text: player.username + " joined the game! (SPECTATING)"
+                    };
+                }
+
+                initPayload.roundTimeLeft = timers.roundTimeLeft;
+                initPayload.cursor = game.currentPlayer.cursor;
+
+                socket.emit('init', initPayload);
+                sendWordToClient();
+                sendGameMode();
+
             } else {
-                msg = {
-                    text: player.username + " joined the game! (SPECTATING)"
-                };
+                //player.isPlaying = true;
+                socket.emit('init', initPayload);
             }
 
-            initPayload.roundTimeLeft = timers.roundTimeLeft;
-            initPayload.cursor = game.currentPlayer.cursor;
+            io.emit("chatMessage", msg);
+            game.players.push(player);
+            sendPlayersList();
 
-            socket.emit('init', initPayload);
-            sendWordToClient();
-            sendGameMode();
+            //emits usercount to be displayed on page.  May replace with inital start payload
+            io.emit('userCount', userCount);
 
-        } else {
-            //player.isPlaying = true;
-            socket.emit('init', initPayload);
-        }
 
-        io.emit("chatMessage", msg);
-        game.players.push(player);
-        sendPlayersList();
+            //forgive me father for I have sinned 
+        }, 500);
 
-        //emits usercount to be displayed on page.  May replace with inital start payload
-        io.emit('userCount', userCount);
     });
 
     //clears canvas event (cls button)
@@ -178,7 +216,7 @@ io.on('connection', function (socket) {
             io.emit('chatMessage', msg);
 
             if (game.inProgress && p.isPlaying) {
-                doGuess(g, p.username);
+                doGuess(g, p);
             }
 
         }
@@ -246,6 +284,94 @@ io.on('connection', function (socket) {
         }
 
         sendPlayersList();
+    });
+
+    socket.on("registerPlayer", function (data) {
+        var username = data.username;
+        var password = encrypt(data.password);
+        var cursor = data.cursor;
+
+        //var values = [username, password, cursor];
+        var values = {
+            USERNAME: username,
+            PASSWORD: password,
+            CURSORS: cursor
+        };
+
+        var sql;
+
+        sql = "SELECT * FROM users WHERE USERNAME = ?";
+
+        con.query(sql, [username], function (err, result) {
+            if (err) throw err;
+
+            if (result.length == 0) {
+                sql = "INSERT INTO users SET ?";
+
+                con.query(sql, values, function (err, result) {
+                    if (err) throw err;
+                    io.sockets.connected[socket.id].emit("registerSuccess", {
+                        result: true
+                    });
+                });
+            } else {
+                io.sockets.connected[socket.id].emit("registerSuccess", {
+                    result: false
+                });
+            }
+        });
+
+    });
+
+    socket.on("updatePlayerSettings", function (data) {
+        var cursor = data.cursor;
+        var p = findPlayerBySocket(socket);
+
+        var sql = "UPDATE users SET CURSORS = ? WHERE USERNAME = ?";
+        con.query(sql, [cursor, p.username], function (err, result) {
+            if (err) throw err;
+
+            findPlayerBySocket(socket).cursor = cursor;
+
+            io.sockets.connected[socket.id].emit("registerSuccess", {
+                result: true
+            });
+        });
+
+    });
+
+    socket.on("login", function (data) {
+        var username = con.escape(data.username);
+        var password = encrypt(data.password);
+
+        var result = false;
+        var secret = "";
+
+        var sql = 'SELECT * FROM users WHERE USERNAME = ? AND PASSWORD = ?';
+        con.query(sql, [username, password], function (err, result) {
+            if (err) throw err;
+
+            if (result.length > 0) {
+                result = true;
+                secret = encrypt("" + Math.random() * 100000 + "" + Math.random() * 100000 + "" + Math.random() * 100000);
+                console.log("OK1");
+
+                if (result) {
+                    sql = "UPDATE users SET SECRET = ? WHERE USERNAME = ? AND PASSWORD = ?";
+                    con.query(sql, [secret, username, password], function (err, rows, fields) {});
+                    io.sockets.connected[socket.id].emit("login", {
+                        result: result,
+                        secret: secret
+                    });
+                    console.log("OK2");
+                }
+            } else {
+                io.sockets.connected[socket.id].emit("login", {
+                    result: false,
+                    secret: ""
+                });
+            }
+        });
     });
 
     //on game start request (button clicked)
@@ -355,7 +481,7 @@ function updatePlayerTurn() {
 
 
 //handles the guessing from chat
-function doGuess(guess, username) {
+function doGuess(guess, user) {
     /* if (guess.length == 1) {
          for (var x = 0; x <= game.currentWordSolved.length; x++) {
              var c = game.currentWordSolved.charAt(x);
@@ -374,7 +500,7 @@ function doGuess(guess, username) {
 
             clearTimers();
             sendWordToClient();
-            roundWin(username);
+            roundWin(user);
         }
     }
 }
@@ -458,12 +584,13 @@ function getNewWord() {
 
 
 //handles when a round is won.  Sends winner stuff to client
-function roundWin(username) {
-    console.log("[GAME EVENT] ROUND WON - " + username);
+function roundWin(user) {
+
     var winner = {};
 
-    if (username != "Nobody") {
-        winner = findPlayerByUsername(username);
+    if (user != "Nobody") {
+        //winner = findPlayerByUsername(username);
+        winner = user;
         winner.points += 10;
 
         game.currentPlayer.points += 5;
@@ -474,7 +601,7 @@ function roundWin(username) {
         };
     }
 
-
+    console.log("[GAME EVENT] ROUND WON - " + winner.username);
     io.emit("wordAnswer", game.currentWordSolved);
     sendplayersnpoints();
     io.emit("roundWin", winner.username);
@@ -637,6 +764,21 @@ function getRandomCursor() {
     console.log(cursor);
     return cursor;
 }
+
+function encrypt(text) {
+    var hash = crypto.createHmac('sha512', algorithmPassword);
+    hash.update(text);
+    var value = hash.digest('hex');
+    return value;
+}
+
+function decrypt(text) {
+    var decipher = crypto.createDecipher(algorithm, algorithmPassword);
+    var dec = decipher.update(text, 'hex', 'utf8');
+    dec += decipher.final('utf8');
+    return dec;
+}
+
 
 //third party setcharat function
 String.prototype.setCharAt = function (index, chr) {

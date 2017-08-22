@@ -3,5 +3,7 @@
 	"username":"",
 	"password":"",
 	"db":"",
-	"table":""
+	"table":"",
+	"algo":"aes-256-ctr",
+	"algo-password":"pizza46fhr3"
 }

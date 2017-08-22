@@ -40,7 +40,7 @@
         <div id="top">
             <img src="css/dmt.jpg" height="90%" />
             <h3>DMT</h3>
-            
+
         </div>
         <div id="mid">
             <div id="toolbarContainer">
@@ -116,10 +116,39 @@
 
 
         <div class="modal-content">
+            <div id="statusMessage"></div>
             <div id="modal-profile">
+                <div id="loginFields">
+                    <form action="" id="modal-login" autocomplete="off">
+                        <input type="text" id="modal-login-username" placeholder="Username" />
+                        <input type="text" id="modal-login-password" placeholder="Password" />
+                        <button class="btn btn-primary" id="loginButton">Login</button>
+                        <button class="btn btn-primary" id="registerButton">Register</button>
+                    </form>
+                </div>
+                <div id="profileFields">
+                    Logged in as <span id="username"></span> <a id="editProfile">Edit Profile</a> | <a id="logoutProfile">Logout</a>
+                </div>
+
+                <div id="registerFields">
+                    <br>
+                    <form action="" id="modal-register" autocomplete="off">
+                        <div id="registerOnly">
+                            Username: <input type="text" required id="modal-register-username" placeholder="Username" /><br> Password:
+                            <input type="password" id="modal-register-password" placeholder="Password" /><br>
+                        </div>
+                        Cursor: <input type="url" id="modal-register-cursor" placeholder="URL" /><img src="" height="32px"
+                            width="32px" id="cursorPreview"><br><br>
+                        <button class="btn btn-primary" id="registerSubmitButton">Submit</button>
+
+                    </form>
+                </div>
+            </div>
+            <br>
+            <div id="modal-Status">
                 <input type="checkbox" id="ready" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-offstyle="danger">
                 <input type="checkbox" id="spectate" data-toggle="toggle" data-on="Player" data-off="Spectator" data-onstyle="success" data-offstyle="warning">
-                <span id="username"></span>
+
             </div><br>
 
             <div id="modal-playerList">

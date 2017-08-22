@@ -207,6 +207,9 @@ html {
     /* Could be more or less, depending on screen size */
 }
 
+#profileFields, #registerFields, #registerOnly, #statusMessage {
+    display:none;
+}
 
 .playButtons {
     display:none;
