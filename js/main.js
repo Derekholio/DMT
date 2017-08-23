@@ -30,7 +30,7 @@ var messageType = {
 };
 
 socket.on('connect', function () {
-    toggleReady(false);
+    //toggleReady(false);
     var c = getCookieValue("c");
     socket.emit("init", {
         c: c

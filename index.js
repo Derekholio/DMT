@@ -145,7 +145,7 @@ io.on('connection', function (socket) {
             con.query(sql, [data.c], function (err, result) {
                 if (err) throw err;
                 if (result.length > 0) {
-                    console.log(result);
+                   
                     player.loggedIn = true;
 
                     player.username = result[0].USERNAME;
@@ -396,7 +396,7 @@ io.on('connection', function (socket) {
             if (result.length > 0) {
                 result = true;
                 secret = encrypt("" + Math.random() * 100000 + "" + Math.random() * 100000 + "" + Math.random() * 100000);
-                console.log("OK1");
+               
 
                 if (result) {
                     sql = "UPDATE users SET SECRET = ? WHERE USERNAME = ? AND PASSWORD = ?";
@@ -405,7 +405,7 @@ io.on('connection', function (socket) {
                         result: result,
                         secret: secret
                     });
-                    console.log("OK2");
+                    
                 }
             } else {
                 socket.emit("login", {
@@ -702,7 +702,7 @@ function sendPlayersList() {
         });
 
     });
-    console.log(playerPlayerCount);
+    
     io.emit("playerAddedStart", {
         list: list,
         playerCount: playerPlayerCount
@@ -834,7 +834,7 @@ function getRandomCursor() {
     var cursor = null;
 
     cursor = cursorsDirectory + cursors[Math.floor(Math.random() * cursors.length)];
-    console.log(cursor);
+ 
     return cursor;
 }
 
