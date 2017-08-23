@@ -70,6 +70,7 @@ var timers = {
 con.connect(function (err) {
     if (err) {
         console.log("SQL CANNOT CONNECT - DISABLING SQL USAGE");
+        console.log(err);
         game.useSQL = false;
 
     } else {
