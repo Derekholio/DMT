@@ -45,6 +45,11 @@ socket.on('drawing', onDrawingEvent);
 socket.on("init", function (data) {
     player = data;
 
+    if(!data.useSQL){
+        statusMessage("danger", "SQL Cannot Connect - No Login Available!");
+        $("#loginFields").hide();
+    }
+
     if (player.loggedIn) {
         $("#loginFields").hide();
         $("#username").text(player.username);
@@ -255,7 +260,6 @@ socket.on("drawHistory", function (history) {
     var w = canvas.self.width;
     var h = canvas.self.height;
     history.forEach(function (item) {
-        console.log("Drawing line");
         canvas.drawLine(item.x0 * w, item.y0 * h, item.x1 * w, item.y1 * h, item.color, item.lineWidth, false);
     });
 });
@@ -289,17 +293,21 @@ socket.on("registerSuccess", function (data) {
 
     if (result) {
         $("#registerFields").toggle();
-        $('#statusMessage').removeClass("alert alert-success").removeClass("alert alert-danger");
+        //$('#statusMessage').removeClass("alert alert-success").removeClass("alert alert-danger");
         if (player.loggedIn) {
-            $('#statusMessage').text("Settings Updated").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
+            //$('#statusMessage').text("Settings Updated").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
+            statusMessage("success", "Settings Updated");
         } else {
-             $('#statusMessage').text("Success -- Please login").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
+            statusMessage("success", "Success -- Please login");
+             //$('#statusMessage').text("Success -- Please login").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
         }
     } else {
         if (player.loggedIn) {
-             $('#statusMessage').text("Settings not Saved").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
+            statusMessage("danger", "Error! Settings Not Saved!");
+             //$('#statusMessage').text("Settings not Saved").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
         } else {
-             $('#statusMessage').text("Use a different Username").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
+            statusMessage("danger", "Use a different Username!");
+             //$('#statusMessage').text("Use a different Username").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
         }
     }
 });
@@ -417,6 +425,8 @@ $(document).ready(function () {
 
     $("#editProfile, #registerButton").click(function (e) {
         e.preventDefault();
+
+        toggleReady(false);
 
         if (player.loggedIn) {
             $("#registerOnly").hide();
@@ -581,4 +591,8 @@ function getCookieValue(a) {
 function toggleReady(ready) {
     if (ready) $('#ready').bootstrapToggle('on');
     else $('#ready').bootstrapToggle('off');
+}
+
+function statusMessage(status, text){
+    $('#statusMessage').removeClass("alert alert-success").removeClass("alert alert-danger").addClass("alert alert-"+status).text(text).show().delay(5000).fadeOut('slow');
 }

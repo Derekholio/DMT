@@ -20,6 +20,9 @@ try {
     throw err;
 }
 
+var algorithm = config.algo;
+var algorithmPassword = config.algoPassword;
+
 var con = mysql.createConnection({
     host: config.host,
     user: config.username,
@@ -27,20 +30,16 @@ var con = mysql.createConnection({
     database: config.db
 });
 
-con.connect(function (err) {
-    if (err) throw err;
-});
-
-var algorithm = config.algo;
-var algorithmPassword = config.algoPassword;
-
-
 //DMT Variables
 var userCount = 0;
 var drawHistory = [];
 
+var cursorsDirectory = "css/cursors/";
+var cursors = ["skeleton.gif", "spinner.gif", "horse.gif", "court.png", "pencil.cur"];
+
 //Game Object
 var game = {
+    useSQL: false,
     inProgress: false,
     players: [],
     //currentTurn: -1,
@@ -67,8 +66,44 @@ var timers = {
     roundTimeLeft: 0
 };
 
-var cursorsDirectory = "css/cursors/";
-var cursors = ["skeleton.gif", "spinner.gif", "horse.gif", "court.png", "pencil.cur"];
+
+con.connect(function (err) {
+    if (err) {
+        console.log("SQL CANNOT CONNECT - DISABLING SQL USAGE");
+        game.useSQL = false;
+
+    } else {
+        console.log("SQL CONNECTED! ENABLING SQL USAGE");
+        game.useSQL = true;
+    }
+});
+
+/*
+var sqlCheck = setInterval(function () {
+
+    if (con.state === 'disconnected') {
+
+        if (game.useSQL) {
+            console.log("SQL Check Failed! DISABLING SQL USAGE");
+            game.useSQL = false;
+        }
+        con.connect(function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("SQL Check SUCCESS! ENABLING SQL USAGE");
+                game.useSQL = true;
+            }
+        });
+
+    }
+}, 1000);*/
+
+var sqlCheck = setInterval(function(){
+    if(con.state === 'disconnected' && game.useSQL){
+        game.useSQL = false;
+    }
+}, 100);
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
@@ -104,7 +139,7 @@ io.on('connection', function (socket) {
             loggedIn: false
         };
 
-        if (data.c != null) {
+        if (data.c != null && game.useSQL) {
             var sql = "SELECT * FROM users WHERE SECRET = ?";
             con.query(sql, [data.c], function (err, result) {
                 if (err) throw err;
@@ -117,8 +152,6 @@ io.on('connection', function (socket) {
                     player.cursor = result[0].CURSORS;
                 }
             });
-
-
         }
 
         setTimeout(function () {
@@ -129,7 +162,8 @@ io.on('connection', function (socket) {
                 inProgress: game.inProgress,
                 ready: player.ready,
                 loggedIn: player.loggedIn,
-                cursor: player.cursor
+                cursor: player.cursor,
+                useSQL: game.useSQL
             };
 
             var msg = {
@@ -287,6 +321,11 @@ io.on('connection', function (socket) {
     });
 
     socket.on("registerPlayer", function (data) {
+
+        if (!game.useSQL) {
+            return;
+        }
+
         var username = data.username;
         var password = encrypt(data.password);
         var cursor = data.cursor;
@@ -324,6 +363,9 @@ io.on('connection', function (socket) {
     });
 
     socket.on("updatePlayerSettings", function (data) {
+        if (!game.useSQL) {
+            return;
+        }
         var cursor = data.cursor;
         var p = findPlayerBySocket(socket);
 
@@ -341,6 +383,10 @@ io.on('connection', function (socket) {
     });
 
     socket.on("login", function (data) {
+        if (!game.useSQL) {
+            return;
+        }
+
         var username = data.username;
         var password = encrypt(data.password);
 
