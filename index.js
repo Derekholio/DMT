@@ -341,7 +341,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on("login", function (data) {
-        var username = con.escape(data.username);
+        var username = data.username;
         var password = encrypt(data.password);
 
         var result = false;
