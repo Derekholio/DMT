@@ -108,10 +108,12 @@ socket.on("wordAnswer", function (data) {
 
 
 //listens for playerlist from server.  updates modal playerlist
-socket.on("playerAddedStart", function (players) {
+socket.on("playerAddedStart", function (data) {
     $("#playersToStart").html("");
     var t = player;
-
+    var players = data.list;
+    var playerPlayerCount = data.playerCount;
+    console.log(playerPlayerCount);
     players.forEach(function (player) {
         var medals = "";
         for (x = 0; x < player.wins; x++) {
@@ -133,6 +135,15 @@ socket.on("playerAddedStart", function (players) {
             $("#playersToStart").append('<li class="list-group-item list-group-item-danger">' + player.username + " " + medals + '</li>');
         }
     });
+
+    if(playerPlayerCount >= 2){
+        $("#startGameButtonEndless").prop("disabled", false);
+        $("#startGameButton").prop("disabled", false);
+    } else {
+        $("#startGameButtonEndless").prop("disabled", true);
+        $("#startGameButton").prop("disabled", true);
+    }
+
 });
 
 

@@ -237,10 +237,6 @@ io.on('connection', function (socket) {
             var status = "";
             var p = findPlayerBySocket(socket);
 
-            /* if (!findPlayerByUsername(msg.username).isPlaying && game.inProgress) {
-                 status = "(SPECTATING) ";
-             }*/
-
             if (p.state == game.playerStates.SPECTATOR && game.inProgress) {
                 status = "(SPECTATOR)";
             } else if (p.state == game.playerStates.SPECTATOR && game.inProgress && !p.isPlaying) {
@@ -276,7 +272,6 @@ io.on('connection', function (socket) {
             endGame();
         }
 
-        //io.emit("playerAddedStart", game.players);
         sendPlayersList();
     });
 
@@ -350,12 +345,12 @@ io.on('connection', function (socket) {
 
                 con.query(sql, values, function (err, result) {
                     if (err) throw err;
-                    io.sockets.connected[socket.id].emit("registerSuccess", {
+                    socket.emit("registerSuccess", {
                         result: true
                     });
                 });
             } else {
-                io.sockets.connected[socket.id].emit("registerSuccess", {
+                socket.emit("registerSuccess", {
                     result: false
                 });
             }
@@ -376,7 +371,7 @@ io.on('connection', function (socket) {
 
             findPlayerBySocket(socket).cursor = cursor;
 
-            io.sockets.connected[socket.id].emit("registerSuccess", {
+            socket.emit("registerSuccess", {
                 result: true
             });
         });
@@ -406,14 +401,14 @@ io.on('connection', function (socket) {
                 if (result) {
                     sql = "UPDATE users SET SECRET = ? WHERE USERNAME = ? AND PASSWORD = ?";
                     con.query(sql, [secret, username, password], function (err, rows, fields) {});
-                    io.sockets.connected[socket.id].emit("login", {
+                    socket.emit("login", {
                         result: result,
                         secret: secret
                     });
                     console.log("OK2");
                 }
             } else {
-                io.sockets.connected[socket.id].emit("login", {
+                socket.emit("login", {
                     result: false,
                     secret: ""
                 });
@@ -459,11 +454,7 @@ function startGame(event) {
 
     io.emit("gameStarted");
     newRound();
-    //updatePlayerTurn();
-    // getNewWord();
-
-    //sendWordToClient();
-    //io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
+    
 }
 
 //Returns Time in Seconds
@@ -475,7 +466,7 @@ function getTime() {
 //updates the players turn
 function updatePlayerTurn() {
     console.log("[GAME EVENT] UPDATING PLAYER TURN");
-    //game.currentTurn += 1;
+
     if (game.currentPlayer != null) {
         game.currentPlayer.drawing = false;
         game.currentPlayer.hasDrawn = true;
@@ -670,17 +661,21 @@ function clearTimers() {
 //sends player list (modal) to client
 function sendPlayersList() {
     var list = [];
+    var playerPlayerCount = 0;
 
     game.players.forEach(function (player) {
+        if(player.state == game.playerStates.PLAYER && player.ready) { playerPlayerCount++; }
+        
         list.push({
             username: player.username,
             wins: player.wins,
             ready: player.ready,
             state: player.state
         });
-    });
 
-    io.emit("playerAddedStart", list);
+    });
+    console.log(playerPlayerCount);
+    io.emit("playerAddedStart", {list: list, playerCount: playerPlayerCount});
 }
 
 
