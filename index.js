@@ -145,12 +145,21 @@ io.on('connection', function (socket) {
             con.query(sql, [data.c], function (err, result) {
                 if (err) throw err;
                 if (result.length > 0) {
-                   
-                    player.loggedIn = true;
+                    var p = result[0].USERNAME;
+                    var f = false;
+                    game.players.forEach(function (item) {
+                        if (p == item.username) {
+                            f = true;
+                        }
+                    });
 
-                    player.username = result[0].USERNAME;
-                    player.wins = result[0].WINS;
-                    player.cursor = result[0].CURSORS;
+                    if (!f) {
+                        player.loggedIn = true;
+
+                        player.username = result[0].USERNAME;
+                        player.wins = result[0].WINS;
+                        player.cursor = result[0].CURSORS;
+                    }
                 }
             });
         }
@@ -396,7 +405,7 @@ io.on('connection', function (socket) {
             if (result.length > 0) {
                 result = true;
                 secret = encrypt("" + Math.random() * 100000 + "" + Math.random() * 100000 + "" + Math.random() * 100000);
-               
+
 
                 if (result) {
                     sql = "UPDATE users SET SECRET = ? WHERE USERNAME = ? AND PASSWORD = ?";
@@ -405,7 +414,7 @@ io.on('connection', function (socket) {
                         result: result,
                         secret: secret
                     });
-                    
+
                 }
             } else {
                 socket.emit("login", {
@@ -595,10 +604,10 @@ function endGame() {
             con.query(sql, [player.username], function (err, result) {
                 if (err) throw err;
                 var plays = result[0].PLAYS + 1;
-                
+
                 sql = "UPDATE users SET PLAYS = ? WHERE USERNAME = ?";
                 con.query(sql, [plays, player.username], function (err, result) {
-                    if(err) throw err;
+                    if (err) throw err;
                 });
             });
         }
@@ -702,7 +711,7 @@ function sendPlayersList() {
         });
 
     });
-    
+
     io.emit("playerAddedStart", {
         list: list,
         playerCount: playerPlayerCount
@@ -834,7 +843,7 @@ function getRandomCursor() {
     var cursor = null;
 
     cursor = cursorsDirectory + cursors[Math.floor(Math.random() * cursors.length)];
- 
+
     return cursor;
 }
 

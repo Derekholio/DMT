@@ -57,7 +57,7 @@ socket.on("init", function (data) {
     }
 
     username = data.username;
-    console.log(username);
+  
     //resetInterface();
 
 
@@ -113,7 +113,7 @@ socket.on("playerAddedStart", function (data) {
     var t = player;
     var players = data.list;
     var playerPlayerCount = data.playerCount;
-    console.log(playerPlayerCount);
+   
     players.forEach(function (player) {
         var medals = "";
         for (x = 0; x < player.wins; x++) {
@@ -290,7 +290,7 @@ socket.on("gameMode", function (mode) {
 });
 
 socket.on("login", function (data) {
-    console.log(data.result);
+   
     if (data.result) {
         var c = data.secret;
         document.cookie = "c=" + c;
