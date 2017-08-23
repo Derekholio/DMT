@@ -100,8 +100,8 @@ var sqlCheck = setInterval(function () {
     }
 }, 1000);*/
 
-var sqlCheck = setInterval(function(){
-    if(con.state === 'disconnected' && game.useSQL){
+var sqlCheck = setInterval(function () {
+    if (con.state === 'disconnected' && game.useSQL) {
         game.useSQL = false;
     }
 }, 100);
@@ -454,7 +454,7 @@ function startGame(event) {
 
     io.emit("gameStarted");
     newRound();
-    
+
 }
 
 //Returns Time in Seconds
@@ -589,11 +589,37 @@ function endGame() {
             winner.score = player.points;
         }
 
+        if (game.useSQL && player.loggedIn) {
+            var sql = "SELECT * FROM users WHERE USERNAME = ?";
+
+            con.query(sql, [player.username], function (err, result) {
+                if (err) throw err;
+                var plays = result[0].PLAYS + 1;
+                
+                sql = "UPDATE users SET PLAYS = ? WHERE USERNAME = ?";
+                con.query(sql, [plays, player.username], function (err, result) {
+                    if(err) throw err;
+                });
+            });
+        }
+
         player.isPlaying = false;
     });
 
     if (winner.player) {
         winner.player.wins += 1;
+
+        if (game.useSQL && winner.player.loggedIn) {
+            var sql = "SELECT * FROM users WHERE USERNAME = ?";
+            con.query(sql, [winner.player.username], function (err, result) {
+                if (err) throw err;
+                winner.player.wins = result[0].WINS + 1;
+
+                sql = "UPDATE users SET WINS = ? WHERE USERNAME = ?";
+                con.query(sql, [winner.player.wins, winner.player.username], function (err, result) {});
+            });
+        }
+
         io.emit("winner", winner);
         setTimeout(function () {
             io.emit("gameEnded");
@@ -664,8 +690,10 @@ function sendPlayersList() {
     var playerPlayerCount = 0;
 
     game.players.forEach(function (player) {
-        if(player.state == game.playerStates.PLAYER && player.ready) { playerPlayerCount++; }
-        
+        if (player.state == game.playerStates.PLAYER && player.ready) {
+            playerPlayerCount++;
+        }
+
         list.push({
             username: player.username,
             wins: player.wins,
@@ -675,7 +703,10 @@ function sendPlayersList() {
 
     });
     console.log(playerPlayerCount);
-    io.emit("playerAddedStart", {list: list, playerCount: playerPlayerCount});
+    io.emit("playerAddedStart", {
+        list: list,
+        playerCount: playerPlayerCount
+    });
 }
 
 
