@@ -1,0 +1,9 @@
+{
+	"host":"",
+	"username":"",
+	"password":"",
+	"db":"",
+	"table":"",
+	"algo":"aes-256-ctr",
+	"algoPassword":"pizza46fhr3"
+}

@@ -13,7 +13,7 @@
         crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
         crossorigin="anonymous">
-         <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/dmt.css">
 
     <link rel="stylesheet" href="css/farbtastic.css" type="text/css" />
@@ -26,7 +26,7 @@
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.slim.js"></script>
     <script type="text/javascript" src="js/jquery.titlealert.min.js"></script>
-   
+
     <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
     <script type="text/javascript" src="js/farbtastic.js"></script>
     <script type="text/javascript" src="js/canvas.js"></script>
@@ -40,6 +40,7 @@
         <div id="top">
             <img src="css/dmt.jpg" height="90%" />
             <h3>DMT</h3>
+
         </div>
         <div id="mid">
             <div id="toolbarContainer">
@@ -81,10 +82,10 @@
             </div>
 
             <div id="canvasContainer">
-                       
+
                 <canvas id="canvas"></canvas>
-                <img id="pn" src="css/cursors/pencil.cur"/>   
-                
+                <img id="pn" src="css/cursors/pencil.cur" />
+
             </div>
 
             <div id="chatContainer">
@@ -93,7 +94,7 @@
                     <div class="playersnpoints"></div>
                 </div>
 
-                
+
                 <div id="chat">
                     <ul class="chatScroller">
                     </ul>
@@ -102,7 +103,7 @@
                 <form action="" id="chatInputForm" autocomplete="off">
                     <input type="text" id="chatInput" placeholder="Chat" />
                 </form>
-                 <button class="btn btn-primary" id="endGameButtonEndless">End Endless Game</button>
+                <button class="btn btn-primary" id="endGameButtonEndless">End Endless Game</button>
             </div>
         </div>
         <div id="bottom">
@@ -115,13 +116,55 @@
 
 
         <div class="modal-content">
+            <div id="statusMessage"></div>
+            <div id="modal-profile">
+                <div id="loginFields">
+                    <form action="" id="modal-login" autocomplete="off">
+                        <input type="text" id="modal-login-username" placeholder="Username" />
+                        <input type="text" id="modal-login-password" placeholder="Password" />
+                        <button class="btn btn-primary" id="loginButton">Login</button>
+                        <button class="btn btn-primary" id="registerButton">Register</button>
+                    </form>
+                </div>
+                <div id="profileFields">
+                    Logged in as <span id="username"></span> <a id="editProfile">Edit Profile</a> | <a id="logoutProfile">Logout</a>
+                </div>
+
+                <div id="registerFields">
+                    <br>
+                    <form action="" id="modal-register" autocomplete="off">
+                        <div id="registerOnly">
+                            Username: <input type="text" required id="modal-register-username" placeholder="Username" /><br> Password:
+                            <input type="password" id="modal-register-password" placeholder="Password" /><br>
+                        </div>
+                        Cursor: <input type="url" id="modal-register-cursor" placeholder="URL" /><img src="" height="32px"
+                            width="32px" id="cursorPreview"><br><br>
+                        <button class="btn btn-primary" id="registerSubmitButton">Submit</button>
+
+                    </form>
+                </div>
+            </div>
+            <br>
+            <div id="modal-Status">
+                <input type="checkbox" id="ready" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-offstyle="danger">
+                <input type="checkbox" id="spectate" data-toggle="toggle" data-on="Player" data-off="Spectator" data-onstyle="success" data-offstyle="warning">
+
+            </div><br>
+
             <div id="modal-playerList">
                 <h3>Players</h3>
                 <ul id="playersToStart" class="list-group">
 
                 </ul>
-                <button class="btn btn-primary" id="startGameButton">Start Game</button>
-                 <button class="btn btn-primary" id="startGameButtonEndless">Start Endless Game</button>
+
+                <div id="startButtons" class="playButtons">
+                    <button class="btn btn-primary" id="startGameButton">Start Game</button>
+                    <button class="btn btn-primary" id="startGameButtonEndless">Start Endless Game</button>
+                </div>
+
+                <div id="joinButtons" class="playButtons">
+                    <button class="btn btn-primary" id="joinGame">Join Game in Progress</button>
+                </div>
             </div>
 
             <div id="modal-winner">
@@ -135,11 +178,11 @@
                     <ul class="chatScroller">
                     </ul>
                 </div>
-            
 
-            <form action="" id="modal-chatInputForm" autocomplete="off">
-                <input type="text" id="modal-chatInput" placeholder="Chat" />
-            </form>
+
+                <form action="" id="modal-chatInputForm" autocomplete="off">
+                    <input type="text" id="modal-chatInput" placeholder="Chat" />
+                </form>
             </div>
         </div>
 

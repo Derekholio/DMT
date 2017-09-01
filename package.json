@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "description": "my first socket.io app",
   "dependencies": {
+    "crypto": "^1.0.1",
     "express": "^4.15.2",
+    "fs": "0.0.1-security",
+    "mysql": "^2.14.1",
     "sentencer": "https://github.com/ryanpetersonOF/DMT-Sentencer/archive/master.tar.gz",
     "socket.io": "^1.7.3"
   },

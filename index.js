@@ -6,15 +6,40 @@ var io = require('socket.io')(http, {
     'pingTimeout': 5000
 });
 var Sentencer = require("sentencer");
-
+var fs = require("fs");
+var mysql = require("mysql");
+var crypto = require('crypto');
 var port = process.env.PORT || 8080;
+
+var fileName = "./config.json";
+
+try {
+    var config = require(fileName);
+} catch (err) {
+    console.log("Missing configuration file! (config.json)");
+    throw err;
+}
+
+var algorithm = config.algo;
+var algorithmPassword = config.algoPassword;
+
+var con = mysql.createConnection({
+    host: config.host,
+    user: config.username,
+    password: config.password,
+    database: config.db
+});
 
 //DMT Variables
 var userCount = 0;
 var drawHistory = [];
 
+var cursorsDirectory = "css/cursors/";
+var cursors = ["skeleton.gif", "spinner.gif", "horse.gif", "court.png", "pencil.cur"];
+
 //Game Object
 var game = {
+    useSQL: false,
     inProgress: false,
     players: [],
     //currentTurn: -1,
@@ -27,6 +52,10 @@ var game = {
     modes: {
         "REGULAR": 1,
         "ENDLESS": 2
+    },
+    playerStates: {
+        "PLAYER": 1,
+        "SPECTATOR": 2
     }
 };
 
@@ -37,8 +66,45 @@ var timers = {
     roundTimeLeft: 0
 };
 
-var cursorsDirectory = "css/cursors/";
-var cursors = ["skeleton.gif","spinner.gif", "horse.gif", "court.png", "pencil.cur"];
+
+con.connect(function (err) {
+    if (err) {
+        console.log("SQL CANNOT CONNECT - DISABLING SQL USAGE");
+        console.log(err);
+        game.useSQL = false;
+
+    } else {
+        console.log("SQL CONNECTED! ENABLING SQL USAGE");
+        game.useSQL = true;
+    }
+});
+
+/*
+var sqlCheck = setInterval(function () {
+
+    if (con.state === 'disconnected') {
+
+        if (game.useSQL) {
+            console.log("SQL Check Failed! DISABLING SQL USAGE");
+            game.useSQL = false;
+        }
+        con.connect(function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("SQL Check SUCCESS! ENABLING SQL USAGE");
+                game.useSQL = true;
+            }
+        });
+
+    }
+}, 1000);*/
+
+var sqlCheck = setInterval(function () {
+    if (con.state === 'disconnected' && game.useSQL) {
+        game.useSQL = false;
+    }
+}, 100);
 
 //HAndles Node server web page serving.  Currently Not used.
 app.get('/', function (req, res) {
@@ -54,98 +120,99 @@ http.listen(port, function () {
 
 //Listens for socket connection event.  Once connected we attach our logic listeners.  Also handles initial connection stuff
 io.on('connection', function (socket) {
-    console.log("["+ socket.id +"] NEW CONNECTION: "+ socket.request.connection.remoteAddress);
+    console.log("[" + socket.id + "] NEW CONNECTION: " + socket.request.connection.remoteAddress);
     userCount += 1;
-    
-    //setsup temporary player object
-    var player = {
-        username: Sentencer.make("{{adjective}} {{noun}}"),
-        socket: socket.id,
-        isPlaying: false,
-        hasDrawn: false,
-        drawing: false,
-        points: 0,
-        wins: 0,
-        cursor: getRandomCursor()
-    };
 
-    var initPayload = {
-        username: player.username,
-        inProgress: game.inProgress
-    };
+    socket.on("init", function (data) {
+        //setsup temporary player object
 
-    var msg = {text: player.username + " joined the game!"};
-/*
-    //forces players who join mid game to spectate
-    if (!game.inProgress) {
-        player.isPlaying = true;
-    } else if (game.inProgress && game.mode == game.modes.ENDLESS) {
-        player.isPlaying = true;
-    }
+        var player = {
+            username: Sentencer.make("{{adjective}} {{noun}}"),
+            socket: socket.id,
+            isPlaying: false,
+            hasDrawn: false,
+            drawing: false,
+            points: 0,
+            wins: 0,
+            cursor: getRandomCursor(),
+            ready: false,
+            state: game.playerStates.PLAYER,
+            loggedIn: false
+        };
 
-    //adds temp player object to games player queue
-    game.players.push(player);
+        if (data.c != null && game.useSQL) {
+            var sql = "SELECT * FROM users WHERE SECRET = ?";
+            con.query(sql, [data.c], function (err, result) {
+                if (err) throw err;
+                if (result.length > 0) {
+                    var p = result[0].USERNAME;
+                    var f = false;
+                    game.players.forEach(function (item) {
+                        if (p == item.username) {
+                            f = true;
+                        }
+                    });
 
-    //if the game is in progress we also send the word to client
-    if (game.inProgress) {
+                    if (!f) {
+                        player.loggedIn = true;
 
-        initPayload.roundTimeLeft = timers.roundTimeLeft;
-        initPayload.cursor = game.currentPlayer.cursor;
+                        player.username = result[0].USERNAME;
+                        player.wins = result[0].WINS;
+                        player.cursor = result[0].CURSORS;
+                    }
+                }
+            });
+        }
 
-        socket.emit('init', initPayload);
-        sendWordToClient();
-        sendGameMode();
-    } else {
-        socket.emit('init', initPayload);
-    }
+        setTimeout(function () {
+            //asynch gods forgive me
 
+            var initPayload = {
+                username: player.username,
+                inProgress: game.inProgress,
+                ready: player.ready,
+                loggedIn: player.loggedIn,
+                cursor: player.cursor,
+                useSQL: game.useSQL
+            };
 
-    //sends player list to client, for modal
-    sendPlayersList();
-
-    //if the game is in progress let everyone know someone joined and spectating
-    if (game.inProgress) {
-        var msg = {};
-        if (game.mode == game.modes.ENDLESS) {
-            msg = {
+            var msg = {
                 text: player.username + " joined the game!"
             };
-        } else {
-            msg = {
-                text: player.username + " joined the game! (SPECTATING)"
-            };
-        }
-        io.emit("chatMessage", msg);
-    }*/
 
-    //new   
-    if (game.inProgress) {
-        if(game.mode == game.modes.ENDLESS){
-            player.isPlaying = true;
-        } else {
-            msg = {
-                text: player.username + " joined the game! (SPECTATING)"
-            };
-        }
+            if (game.inProgress) {
+                if (game.mode == game.modes.ENDLESS) {
+                    //player.isPlaying = true;
+                } else {
+                    msg = {
+                        text: player.username + " joined the game! (SPECTATING)"
+                    };
+                }
 
-        initPayload.roundTimeLeft = timers.roundTimeLeft;
-        initPayload.cursor = game.currentPlayer.cursor;
+                initPayload.roundTimeLeft = timers.roundTimeLeft;
+                initPayload.cursor = game.currentPlayer.cursor;
 
-        socket.emit('init', initPayload);
-        sendWordToClient();
-        sendGameMode();
+                socket.emit('init', initPayload);
+                sendWordToClient();
+                sendGameMode();
 
-    } else {
-        player.isPlaying = true;
-        socket.emit('init', initPayload);
-    }
+            } else {
+                //player.isPlaying = true;
+                socket.emit('init', initPayload);
+            }
 
-    io.emit("chatMessage", msg);
-    game.players.push(player);
-    sendPlayersList();
-    
-    //emits usercount to be displayed on page.  May replace with inital start payload
-    io.emit('userCount', userCount);
+            io.emit("chatMessage", msg);
+            game.players.push(player);
+            sendPlayersList();
+
+            //emits usercount to be displayed on page.  May replace with inital start payload
+            io.emit('userCount', userCount);
+
+
+            //forgive me father for I have sinned 
+        }, 500);
+
+    });
 
     //clears canvas event (cls button)
     socket.on("clearScreen", function () {
@@ -157,23 +224,39 @@ io.on('connection', function (socket) {
         endGame();
     });
 
+    socket.on("joinGame", function () {
+        if (game.inProgress) {
+            if (game.mode == game.modes.ENDLESS) {
+                var p = findPlayerBySocket(socket);
+
+                if (p.state == game.playerStates.PLAYER) {
+                    p.isPlaying = true;
+                }
+            }
+        }
+    });
+
     //on message from chat
     socket.on('chatMessage', function (msg) {
-        console.log("["+socket.id+ "] [CHAT MESSAGE]: ", msg);
+
+        console.log("[" + socket.id + "] [CHAT MESSAGE]: ", msg);
 
         if (msg.text.length > 0) {
             var g = msg.text;
             var status = "";
+            var p = findPlayerBySocket(socket);
 
-            if (!findPlayerByUsername(msg.username).isPlaying) {
-                status = "(SPECTATING) ";
+            if (p.state == game.playerStates.SPECTATOR && game.inProgress) {
+                status = "(SPECTATOR)";
+            } else if (p.state == game.playerStates.SPECTATOR && game.inProgress && !p.isPlaying) {
+                status = "(SPECTATOR)";
             }
 
-            msg.text = status + msg.username + ": " + msg.text;
+            msg.text = status + p.username + ": " + msg.text;
             io.emit('chatMessage', msg);
 
-            if (game.inProgress && findPlayerByUsername(msg.username).isPlaying) {
-                doGuess(g, msg.username);
+            if (game.inProgress && p.isPlaying) {
+                doGuess(g, p);
             }
 
         }
@@ -181,7 +264,7 @@ io.on('connection', function (socket) {
 
     //on client disconnect.  removes player and updates player list
     socket.on('disconnect', function () {
-        console.log("["+socket.id+"] DISCONNECTED");
+        console.log("[" + socket.id + "] DISCONNECTED");
         userCount -= 1;
 
         //removes player from games player queue
@@ -198,7 +281,6 @@ io.on('connection', function (socket) {
             endGame();
         }
 
-        //io.emit("playerAddedStart", game.players);
         sendPlayersList();
     });
 
@@ -224,6 +306,123 @@ io.on('connection', function (socket) {
 
     socket.on("drawerMouseMove", function (mouse) {
         io.emit("drawerMouseMove", mouse);
+    });
+
+    socket.on("playerReady", function (status) {
+        findPlayerBySocket(socket).ready = status;
+        sendPlayersList();
+    });
+
+    socket.on("playerPlayer", function (status) {
+        var p = findPlayerBySocket(socket);
+
+        if (status) {
+            p.state = game.playerStates.PLAYER;
+        } else {
+            p.state = game.playerStates.SPECTATOR;
+        }
+
+        sendPlayersList();
+    });
+
+    socket.on("registerPlayer", function (data) {
+
+        if (!game.useSQL) {
+            return;
+        }
+
+        var username = data.username;
+        var password = encrypt(data.password);
+        var cursor = data.cursor;
+
+        //var values = [username, password, cursor];
+        var values = {
+            USERNAME: username,
+            PASSWORD: password,
+            CURSORS: cursor
+        };
+
+        var sql;
+
+        sql = "SELECT * FROM users WHERE USERNAME = ?";
+
+        con.query(sql, [username], function (err, result) {
+            if (err) throw err;
+
+            if (result.length == 0) {
+                sql = "INSERT INTO users SET ?";
+
+                con.query(sql, values, function (err, result) {
+                    if (err) throw err;
+                    socket.emit("registerSuccess", {
+                        result: true
+                    });
+                });
+            } else {
+                socket.emit("registerSuccess", {
+                    result: false
+                });
+            }
+        });
+
+    });
+
+    socket.on("updatePlayerSettings", function (data) {
+        if (!game.useSQL) {
+            return;
+        }
+        var cursor = data.cursor;
+        var p = findPlayerBySocket(socket);
+
+        var sql = "UPDATE users SET CURSORS = ? WHERE USERNAME = ?";
+        con.query(sql, [cursor, p.username], function (err, result) {
+            if (err) throw err;
+
+            findPlayerBySocket(socket).cursor = cursor;
+
+            socket.emit("registerSuccess", {
+                result: true
+            });
+        });
+
+    });
+
+    socket.on("login", function (data) {
+        if (!game.useSQL) {
+            return;
+        }
+
+        var username = data.username;
+        var password = encrypt(data.password);
+
+        var result = false;
+        var secret = "";
+
+        var sql = 'SELECT * FROM users WHERE USERNAME = ? AND PASSWORD = ?';
+        con.query(sql, [username, password], function (err, result) {
+            if (err) throw err;
+
+            if (result.length > 0) {
+                result = true;
+                secret = encrypt("" + Math.random() * 100000 + "" + Math.random() * 100000 + "" + Math.random() * 100000);
+
+
+                if (result) {
+                    sql = "UPDATE users SET SECRET = ? WHERE USERNAME = ? AND PASSWORD = ?";
+                    con.query(sql, [secret, username, password], function (err, rows, fields) {});
+                    socket.emit("login", {
+                        result: result,
+                        secret: secret
+                    });
+
+                }
+            } else {
+                socket.emit("login", {
+                    result: false,
+                    secret: ""
+                });
+            }
+        });
     });
 
     //on game start request (button clicked)
@@ -255,18 +454,16 @@ function startGame(event) {
 
     game.players.forEach(function (player) {
         player.points = 0;
-        player.isPlaying = true;
+        if (player.ready && player.state == game.playerStates.PLAYER) {
+            player.isPlaying = true;
+        }
         player.hasDrawn = false;
         player.drawing = false;
     });
 
     io.emit("gameStarted");
     newRound();
-    //updatePlayerTurn();
-    // getNewWord();
 
-    //sendWordToClient();
-    //io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
 }
 
 //Returns Time in Seconds
@@ -278,7 +475,7 @@ function getTime() {
 //updates the players turn
 function updatePlayerTurn() {
     console.log("[GAME EVENT] UPDATING PLAYER TURN");
-    //game.currentTurn += 1;
+
     if (game.currentPlayer != null) {
         game.currentPlayer.drawing = false;
         game.currentPlayer.hasDrawn = true;
@@ -290,16 +487,27 @@ function updatePlayerTurn() {
         if (player.hasDrawn == false && player.isPlaying && game.currentPlayer == null) {
             game.currentPlayer = player;
         }
+
     });
 
     if (game.currentPlayer == null) {
         if (game.mode == game.modes.ENDLESS) {
+            var count = 0;
 
             game.players.forEach(function (player) {
                 player.hasDrawn = false;
+
+                if (player.isPlaying) {
+                    count++;
+                }
             });
 
-            updatePlayerTurn();
+            if (count > 0) {
+                updatePlayerTurn();
+            } else {
+                endGame();
+            }
+
         } else {
             endGame();
         }
@@ -320,7 +528,7 @@ function updatePlayerTurn() {
 
 
 //handles the guessing from chat
-function doGuess(guess, username) {
+function doGuess(guess, user) {
     /* if (guess.length == 1) {
          for (var x = 0; x <= game.currentWordSolved.length; x++) {
              var c = game.currentWordSolved.charAt(x);
@@ -339,7 +547,7 @@ function doGuess(guess, username) {
 
             clearTimers();
             sendWordToClient();
-            roundWin(username);
+            roundWin(user);
         }
     }
 }
@@ -390,19 +598,48 @@ function endGame() {
             winner.score = player.points;
         }
 
-        player.isPlaying = true;
+        if (game.useSQL && player.loggedIn) {
+            var sql = "SELECT * FROM users WHERE USERNAME = ?";
+
+            con.query(sql, [player.username], function (err, result) {
+                if (err) throw err;
+                var plays = result[0].PLAYS + 1;
+
+                sql = "UPDATE users SET PLAYS = ? WHERE USERNAME = ?";
+                con.query(sql, [plays, player.username], function (err, result) {
+                    if (err) throw err;
+                });
+            });
+        }
+
+        player.isPlaying = false;
     });
 
     if (winner.player) {
         winner.player.wins += 1;
+
+        if (game.useSQL && winner.player.loggedIn) {
+            var sql = "SELECT * FROM users WHERE USERNAME = ?";
+            con.query(sql, [winner.player.username], function (err, result) {
+                if (err) throw err;
+                winner.player.wins = result[0].WINS + 1;
+
+                sql = "UPDATE users SET WINS = ? WHERE USERNAME = ?";
+                con.query(sql, [winner.player.wins, winner.player.username], function (err, result) {});
+            });
+        }
+
         io.emit("winner", winner);
+        setTimeout(function () {
+            io.emit("gameEnded");
+        }, 8000);
+    } else {
+        io.emit("gameEnded");
     }
 
     //sendWinnersList();
     sendPlayersList();
-    setTimeout(function () {
-        io.emit("gameEnded");
-    }, 8000);
+
 
     //game.currentTurn = -1;
     game.currentPlayer = null;
@@ -420,12 +657,13 @@ function getNewWord() {
 
 
 //handles when a round is won.  Sends winner stuff to client
-function roundWin(username) {
-    console.log("[GAME EVENT] ROUND WON - "+username);
+function roundWin(user) {
+
     var winner = {};
 
-    if (username != "Nobody") {
-        winner = findPlayerByUsername(username);
+    if (user != "Nobody") {
+        //winner = findPlayerByUsername(username);
+        winner = user;
         winner.points += 10;
 
         game.currentPlayer.points += 5;
@@ -436,7 +674,7 @@ function roundWin(username) {
         };
     }
 
-
+    console.log("[GAME EVENT] ROUND WON - " + winner.username);
     io.emit("wordAnswer", game.currentWordSolved);
     sendplayersnpoints();
     io.emit("roundWin", winner.username);
@@ -458,15 +696,26 @@ function clearTimers() {
 //sends player list (modal) to client
 function sendPlayersList() {
     var list = [];
+    var playerPlayerCount = 0;
 
     game.players.forEach(function (player) {
+        if (player.state == game.playerStates.PLAYER && player.ready) {
+            playerPlayerCount++;
+        }
+
         list.push({
             username: player.username,
-            wins: player.wins
+            wins: player.wins,
+            ready: player.ready,
+            state: player.state
         });
+
     });
 
-    io.emit("playerAddedStart", list);
+    io.emit("playerAddedStart", {
+        list: list,
+        playerCount: playerPlayerCount
+    });
 }
 
 
@@ -557,6 +806,19 @@ function findPlayerByUsername(username) {
     return player;
 }
 
+//finds players by their socket id
+function findPlayerBySocket(socket) {
+    var player;
+
+    game.players.forEach(function (item) {
+        if (socket.id == item.socket) {
+            player = item;
+        }
+    });
+
+    return player;
+}
+
 function sendGameMode() {
     io.emit("gameMode", game.mode);
 }
@@ -581,9 +843,24 @@ function getRandomCursor() {
     var cursor = null;
 
     cursor = cursorsDirectory + cursors[Math.floor(Math.random() * cursors.length)];
-    console.log(cursor);
+
     return cursor;
 }
+
+function encrypt(text) {
+    var hash = crypto.createHmac('sha512', algorithmPassword);
+    hash.update(text);
+    var value = hash.digest('hex');
+    return value;
+}
+
+function decrypt(text) {
+    var decipher = crypto.createDecipher(algorithm, algorithmPassword);
+    var dec = decipher.update(text, 'hex', 'utf8');
+    dec += decipher.final('utf8');
+    return dec;
+}
+
 
 //third party setcharat function
 String.prototype.setCharAt = function (index, chr) {
