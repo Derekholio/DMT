@@ -653,6 +653,10 @@ function getNewWord() {
     for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
         game.currentWord += "_";
     }
+
+
+    
+
 }
 
 
