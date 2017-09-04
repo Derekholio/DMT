@@ -37,6 +37,8 @@ var drawHistory = [];
 var cursorsDirectory = "css/cursors/";
 var cursors = ["skeleton.gif", "spinner.gif", "horse.gif", "court.png", "pencil.cur"];
 
+var botDrawPoints;
+
 //Game Object
 var game = {
     useSQL: false,
@@ -55,7 +57,8 @@ var game = {
     },
     playerStates: {
         "PLAYER": 1,
-        "SPECTATOR": 2
+        "SPECTATOR": 2,
+        "BOT": 3
     }
 };
 
@@ -63,7 +66,8 @@ var game = {
 var timers = {
     roundTimer: null,
     letterTimer: null,
-    roundTimeLeft: 0
+    roundTimeLeft: 0,
+    botDraw: 0
 };
 
 
@@ -124,95 +128,102 @@ io.on('connection', function (socket) {
     userCount += 1;
 
     socket.on("init", function (data) {
-        //setsup temporary player object
-
-        var player = {
-            username: Sentencer.make("{{adjective}} {{noun}}"),
-            socket: socket.id,
-            isPlaying: false,
-            hasDrawn: false,
-            drawing: false,
-            points: 0,
-            wins: 0,
-            cursor: getRandomCursor(),
-            ready: false,
-            state: game.playerStates.PLAYER,
-            loggedIn: false
-        };
-
-        if (data.c != null && game.useSQL) {
-            var sql = "SELECT * FROM users WHERE SECRET = ?";
-            con.query(sql, [data.c], function (err, result) {
-                if (err) throw err;
-                if (result.length > 0) {
-                    var p = result[0].USERNAME;
-                    var f = false;
-                    game.players.forEach(function (item) {
-                        if (p == item.username) {
-                            f = true;
-                        }
-                    });
-
-                    if (!f) {
-                        player.loggedIn = true;
-
-                        player.username = result[0].USERNAME;
-                        player.wins = result[0].WINS;
-                        player.cursor = result[0].CURSORS;
-                    }
-                }
-            });
-        }
-
-        setTimeout(function () {
-            //asynch gods forgive me
-
-            var initPayload = {
-                username: player.username,
-                inProgress: game.inProgress,
-                ready: player.ready,
-                loggedIn: player.loggedIn,
-                cursor: player.cursor,
-                useSQL: game.useSQL
-            };
-
-            var msg = {
-                text: player.username + " joined the game!"
-            };
-
-            if (game.inProgress) {
-                if (game.mode == game.modes.ENDLESS) {
-                    //player.isPlaying = true;
-                } else {
-                    msg = {
-                        text: player.username + " joined the game! (SPECTATING)"
-                    };
-                }
-
-                initPayload.roundTimeLeft = timers.roundTimeLeft;
-                initPayload.cursor = game.currentPlayer.cursor;
-
-                socket.emit('init', initPayload);
-                sendWordToClient();
-                sendGameMode();
-
-            } else {
-                //player.isPlaying = true;
-                socket.emit('init', initPayload);
-            }
-
-            io.emit("chatMessage", msg);
-            game.players.push(player);
-            sendPlayersList();
-
-            //emits usercount to be displayed on page.  May replace with inital start payload
-            io.emit('userCount', userCount);
-
-
-            //forgive me father for I have sinned 
-        }, 500);
-
+        makePlayer(data, socket);
     });
+
+    socket.on("addBot", function () {
+        makePlayer(null, null, game.playerStates.BOT);
+    });
+    /* socket.on("init", function (data) {
+         //setsup temporary player object
+
+         var player = {
+             username: Sentencer.make("{{adjective}} {{noun}}"),
+             socket: socket.id,
+             isPlaying: false,
+             hasDrawn: false,
+             drawing: false,
+             points: 0,
+             wins: 0,
+             cursor: getRandomCursor(),
+             ready: false,
+             state: game.playerStates.PLAYER,
+             loggedIn: false
+         };
+
+         if (data.c != null && game.useSQL) {
+             var sql = "SELECT * FROM users WHERE SECRET = ?";
+             con.query(sql, [data.c], function (err, result) {
+                 if (err) throw err;
+                 if (result.length > 0) {
+                     var p = result[0].USERNAME;
+                     var f = false;
+                     game.players.forEach(function (item) {
+                         if (p == item.username) {
+                             f = true;
+                         }
+                     });
+
+                     if (!f) {
+                         player.loggedIn = true;
+
+                         player.username = result[0].USERNAME;
+                         player.wins = result[0].WINS;
+                         player.cursor = result[0].CURSORS;
+                     }
+                 }
+             });
+         }
+
+         setTimeout(function () {
+             //asynch gods forgive me
+
+             var initPayload = {
+                 username: player.username,
+                 inProgress: game.inProgress,
+                 ready: player.ready,
+                 loggedIn: player.loggedIn,
+                 cursor: player.cursor,
+                 useSQL: game.useSQL
+             };
+
+             var msg = {
+                 text: player.username + " joined the game!"
+             };
+
+             if (game.inProgress) {
+                 if (game.mode == game.modes.ENDLESS) {
+                     //player.isPlaying = true;
+                 } else {
+                     msg = {
+                         text: player.username + " joined the game! (SPECTATING)"
+                     };
+                 }
+
+                 initPayload.roundTimeLeft = timers.roundTimeLeft;
+                 initPayload.cursor = game.currentPlayer.cursor;
+
+                 socket.emit('init', initPayload);
+                 sendWordToClient();
+                 sendGameMode();
+
+             } else {
+                 //player.isPlaying = true;
+                 socket.emit('init', initPayload);
+             }
+
+             io.emit("chatMessage", msg);
+             game.players.push(player);
+             sendPlayersList();
+
+             //emits usercount to be displayed on page.  May replace with inital start payload
+             io.emit('userCount', userCount);
+
+
+             //forgive me father for I have sinned 
+         }, 500);
+
+     });*/
 
     //clears canvas event (cls button)
     socket.on("clearScreen", function () {
@@ -296,6 +307,9 @@ io.on('connection', function (socket) {
     //on drawing event
     socket.on('drawing', function (data) {
         socket.broadcast.emit('drawing', data);
+
+        data.time = game.roundTimeout - timers.roundTimeLeft;
+
         drawHistory.push(data);
 
 
@@ -454,7 +468,7 @@ function startGame(event) {
 
     game.players.forEach(function (player) {
         player.points = 0;
-        if (player.ready && player.state == game.playerStates.PLAYER) {
+        if (player.ready && (player.state == game.playerStates.PLAYER || player.state == game.playerStates.BOT)) {
             player.isPlaying = true;
         }
         player.hasDrawn = false;
@@ -519,9 +533,12 @@ function updatePlayerTurn() {
             cursor: game.currentPlayer.cursor
         });
 
-        io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', {
-            cursor: game.currentPlayer.cursor
-        });
+        if (game.currentPlayer.state == game.playerStates.PLAYER) {
+            io.sockets.connected[game.currentPlayer.socket].emit('yourTurn', {
+                cursor: game.currentPlayer.cursor
+            });
+        }
+
     }
 
 }
@@ -547,6 +564,9 @@ function doGuess(guess, user) {
 
             clearTimers();
             sendWordToClient();
+
+
+
             roundWin(user);
         }
     }
@@ -648,22 +668,149 @@ function endGame() {
 
 //gets a new word to be guessed
 function getNewWord() {
-    game.currentWordSolved = Sentencer.make("{{noun}}");
+
+    if (game.currentPlayer.state == game.playerStates.PLAYER) {
+        game.currentWordSolved = Sentencer.make("{{noun}}");
+    } else {
+        var sql = "SELECT * FROM BotWords ORDER BY RAND() LIMIT 1";
+        con.query(sql, "" , function (err, result) {
+            if (err) throw err;
+            game.currentWordSolved = result[0].WORD;
+            botDrawPoints = new Function ('return ' + result[0].POINTS)();
+        });
+    }
+
 
     for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
         game.currentWord += "_";
     }
+}
 
 
-    
+function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
+    var player = {
+        username: Sentencer.make("{{adjective}} {{noun}}"),
+        socket: null,
+        isPlaying: false,
+        hasDrawn: false,
+        drawing: false,
+        points: 0,
+        wins: 0,
+        cursor: getRandomCursor(),
+        ready: false,
+        state: state,
+        loggedIn: false
+    };
 
+    if (socket) {
+        player.socket = socket.id;
+
+    } else {
+        player.username = player.username + " (bot)";
+        player.ready = true;
+    }
+
+    if (data != null && data.c != null && game.useSQL) {
+        var sql = "SELECT * FROM users WHERE SECRET = ?";
+        con.query(sql, [data.c], function (err, result) {
+            if (err) throw err;
+            if (result.length > 0) {
+                var p = result[0].USERNAME;
+                var f = false;
+                game.players.forEach(function (item) {
+                    if (p == item.username) {
+                        f = true;
+                    }
+                });
+
+                if (!f) {
+                    player.loggedIn = true;
+
+                    player.username = result[0].USERNAME;
+                    player.wins = result[0].WINS;
+                    player.cursor = result[0].CURSORS;
+                }
+            }
+        });
+    }
+
+    setTimeout(function () {
+        //asynch gods forgive me
+
+
+        var initPayload = {
+            username: player.username,
+            inProgress: game.inProgress,
+            ready: player.ready,
+            loggedIn: player.loggedIn,
+            cursor: player.cursor,
+            useSQL: game.useSQL
+        };
+
+
+
+        var msg = {
+            text: player.username + " joined the game!"
+        };
+
+        if (game.inProgress) {
+            if (game.mode == game.modes.ENDLESS) {
+                //player.isPlaying = true;
+            } else {
+                msg = {
+                    text: player.username + " joined the game! (SPECTATING)"
+                };
+            }
+
+            initPayload.roundTimeLeft = timers.roundTimeLeft;
+            initPayload.cursor = game.currentPlayer.cursor;
+
+            if (socket) {
+                socket.emit('init', initPayload);
+            }
+            sendWordToClient();
+            sendGameMode();
+
+        } else {
+            //player.isPlaying = true;
+            if (socket) {
+                socket.emit('init', initPayload);
+            }
+
+        }
+
+        io.emit("chatMessage", msg);
+        game.players.push(player);
+        sendPlayersList();
+
+        //emits usercount to be displayed on page.  May replace with inital start payload
+        io.emit('userCount', userCount);
+
+
+        //forgive me father for I have sinned 
+    }, 500);
+
+    return player;
 }
 
 
 //handles when a round is won.  Sends winner stuff to client
 function roundWin(user) {
-
     var winner = {};
+
+    if (game.useSQL && 1==2) {
+        var drawHistoryJSON = drawHistory;//JSON.stringify(drawHistory);
+
+        var sql = "INSERT INTO BotWords SET ?";
+        con.query(sql, {
+            "WORD": game.currentWordSolved,
+            "POINTS": drawHistoryJSON
+        }, function (err, result) {
+            console.log(sql);
+            if (err) throw err;
+
+        });
+    }
 
     if (user != "Nobody") {
         //winner = findPlayerByUsername(username);
@@ -694,6 +841,7 @@ function roundWin(user) {
 function clearTimers() {
     clearTimeout(timers.roundTimer);
     clearTimeout(timers.letterTimer);
+    clearTimeout(timers.botDraw);
 }
 
 
@@ -703,7 +851,7 @@ function sendPlayersList() {
     var playerPlayerCount = 0;
 
     game.players.forEach(function (player) {
-        if (player.state == game.playerStates.PLAYER && player.ready) {
+        if ((player.state == game.playerStates.PLAYER || player.state == game.playerStates.BOT) && player.ready) {
             playerPlayerCount++;
         }
 
@@ -766,8 +914,46 @@ function newRound() {
         getNewWord();
 
         sendWordToClient();
-        io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
+
+        if (game.currentPlayer.state == game.playerStates.PLAYER) {
+            io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
+        } else if (game.currentPlayer.state == game.playerStates.BOT) {
+            botDraw();
+        }
     }
+}
+
+function botDraw() {
+    console.log("botdraw");
+    var timeCount = 0;
+    var intervalTick = 500;
+
+    timers.botDraw = setInterval(function () {
+        if (timeCount >= game.roundTimeout*1000) {
+            console.log("cleared");
+            clearInterval(timers.botDraw);
+        }
+
+        var drawing = true;
+        
+        while(drawing && botDrawPoints[0].time <= timeCount){
+            
+            console.log();
+            var p = botDrawPoints.shift();
+            console.log(p);
+            if(botDrawPoints[0] == undefined){
+                drawing = false;
+                botDrawPoints[0] = {time:0};
+            } else {
+                io.emit('drawing', p);
+            }
+            
+            console.log(drawing);
+        }
+
+        timeCount += intervalTick/1000;
+        console.log(timeCount);
+    }, intervalTick);
 }
 
 

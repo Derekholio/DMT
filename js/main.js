@@ -19,7 +19,8 @@ var game = {
     },
     playerStates: {
         "PLAYER": 1,
-        "SPECTATOR": 2
+        "SPECTATOR": 2,
+        "BOT": 3
     }
 };
 
@@ -129,6 +130,8 @@ socket.on("playerAddedStart", function (data) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
             } else if (player.state == game.playerStates.SPECTATOR) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-warning">' + player.username + " " + medals + '</li>');
+            } else if(player.state == game.playerStates.BOT) {
+                $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
             }
 
         } else {
@@ -422,6 +425,10 @@ $(document).ready(function () {
     $('#ready').change(function () {
         socket.emit("playerReady", $(this).prop('checked'));
         player.ready = $(this).prop('checked');
+    });
+
+    $("#addBot").click(function(){
+        socket.emit("addBot");
     });
 
     $('#spectate').change(function () {
