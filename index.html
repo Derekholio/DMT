@@ -14,9 +14,11 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
         crossorigin="anonymous">
     <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
     <link rel="stylesheet" href="css/dmt.css">
 
     <link rel="stylesheet" href="css/farbtastic.css" type="text/css" />
+    
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -28,6 +30,7 @@
     <script type="text/javascript" src="js/jquery.titlealert.min.js"></script>
 
     <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
     <script type="text/javascript" src="js/farbtastic.js"></script>
     <script type="text/javascript" src="js/canvas.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
@@ -134,7 +137,7 @@
                     <br>
                     <form action="" id="modal-register" autocomplete="off">
                         <div id="registerOnly">
-                            Username: <input type="text" required id="modal-register-username" placeholder="Username" /><br> Password:
+                            Username: <input type="text" required id="modal-register-username" placeholder="Username" /><br>                            Password:
                             <input type="password" id="modal-register-password" placeholder="Password" /><br>
                         </div>
                         Cursor: <input type="url" id="modal-register-cursor" placeholder="URL" /><img src="" height="32px"
@@ -148,7 +151,6 @@
             <div id="modal-Status">
                 <input type="checkbox" id="ready" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-offstyle="danger">
                 <input type="checkbox" id="spectate" data-toggle="toggle" data-on="Player" data-off="Spectator" data-onstyle="success" data-offstyle="warning">
-               <button class="btn btn-primary" id="addBot">Add Bot</button>
             </div><br>
 
             <div id="modal-playerList">
@@ -158,8 +160,19 @@
                 </ul>
 
                 <div id="startButtons" class="playButtons">
+                    <div id="numBotsContainer">
+                    <select id="numBots" class="selectpicker show-tick" data-width="fit">
+                        <option title="No Bots">0</option>
+                        <option title="1 Bot">1</option>
+                        <option title="2 Bots">2</option>
+                        <option title="3 Bots">3</option>
+                    </select><br>
+                    </div>
                     <button class="btn btn-primary" id="startGameButton">Start Game</button>
                     <button class="btn btn-primary" id="startGameButtonEndless">Start Endless Game</button>
+
+
+
                 </div>
 
                 <div id="joinButtons" class="playButtons">

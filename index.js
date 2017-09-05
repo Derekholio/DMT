@@ -37,7 +37,7 @@ var drawHistory = [];
 var cursorsDirectory = "css/cursors/";
 var cursors = ["skeleton.gif", "spinner.gif", "horse.gif", "court.png", "pencil.cur"];
 
-var botDrawPoints;
+var botDrawData = {};
 
 //Game Object
 var game = {
@@ -51,6 +51,7 @@ var game = {
     roundTimeout: 150,
     canGuess: false,
     mode: null,
+    numBots: 0,
     modes: {
         "REGULAR": 1,
         "ENDLESS": 2
@@ -67,8 +68,16 @@ var timers = {
     roundTimer: null,
     letterTimer: null,
     roundTimeLeft: 0,
-    botDraw: 0
+    botDraw: 0,
+    TimerTick: 250
 };
+
+var messageType = {
+    "REG": 1,
+    "BOLD": 2,
+    "RED": 3
+};
+
 
 
 con.connect(function (err) {
@@ -132,7 +141,11 @@ io.on('connection', function (socket) {
     });
 
     socket.on("addBot", function () {
-        makePlayer(null, null, game.playerStates.BOT);
+        if (game.useSQL) {
+            makePlayer(null, null, game.playerStates.BOT);
+        } else {
+            sendServerChatMessage("Cannot add bots at this time! ERR: NOSQL");
+        }
     });
     /* socket.on("init", function (data) {
          //setsup temporary player object
@@ -245,6 +258,40 @@ io.on('connection', function (socket) {
                 }
             }
         }
+    });
+
+    socket.on("numBotsChanged", function (data) {
+
+        if (!game.useSQL) {
+            io.emit("numBotsChanged", 0);
+            sendServerChatMessage("Cannot add bots at this time! ERR: NOSQL");
+            return;
+        }
+
+        var tmp = [];
+        game.numBots = data;
+
+
+        game.players.forEach(function (item, i) {
+            
+            if (item.state == game.playerStates.BOT) {
+
+            } else {
+                tmp.push(item);
+            }
+        });
+        
+        game.players = tmp;
+
+        for(x = 0; x<data; x++){
+            makePlayer(null,null,game.playerStates.BOT);
+        }
+
+        if(data == 0){
+            sendPlayersList();
+        }
+
+        io.emit("numBotsChanged", data);
     });
 
     //on message from chat
@@ -530,6 +577,7 @@ function updatePlayerTurn() {
 
         io.emit("nextTurnPlayer", {
             who: game.currentPlayer.username,
+            state: game.currentPlayer.state,
             cursor: game.currentPlayer.cursor
         });
 
@@ -596,6 +644,13 @@ function sendplayersnpoints() {
 //sends unsolved word to client
 function sendWordToClient() {
     io.emit("wordUpdate", game.currentWord.toUpperCase());
+}
+
+function sendServerChatMessage(msg) {
+    var g = {};
+    g.status = messageType.BOLD;
+    g.text = "SERVER: " + msg;
+    io.emit('chatMessage', g);
 }
 
 
@@ -671,23 +726,34 @@ function getNewWord() {
 
     if (game.currentPlayer.state == game.playerStates.PLAYER) {
         game.currentWordSolved = Sentencer.make("{{noun}}");
+
+        for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
+            game.currentWord += "_";
+        }
+        sendWordToClient();
     } else {
         var sql = "SELECT * FROM BotWords ORDER BY RAND() LIMIT 1";
-        con.query(sql, "" , function (err, result) {
+        con.query(sql, "", function (err, result) {
             if (err) throw err;
+
             game.currentWordSolved = result[0].WORD;
-            botDrawPoints = new Function ('return ' + result[0].POINTS)();
+            var sqlp = new Function('return ' + result[0].POINTS)();
+            botDrawData.ID = result[0].ID;
+            botDrawData.POINTS = sqlp;
+
+            for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
+                game.currentWord += "_";
+            }
+
+            sendWordToClient();
         });
-    }
-
-
-    for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
-        game.currentWord += "_";
     }
 }
 
 
 function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
+    var sin = 500; // used for my async sin
+
     var player = {
         username: Sentencer.make("{{adjective}} {{noun}}"),
         socket: null,
@@ -708,6 +774,7 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
     } else {
         player.username = player.username + " (bot)";
         player.ready = true;
+        sin = 0;
     }
 
     if (data != null && data.c != null && game.useSQL) {
@@ -744,7 +811,8 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
             ready: player.ready,
             loggedIn: player.loggedIn,
             cursor: player.cursor,
-            useSQL: game.useSQL
+            useSQL: game.useSQL,
+            numBots: game.numBots
         };
 
 
@@ -788,7 +856,7 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
 
 
         //forgive me father for I have sinned 
-    }, 500);
+    }, sin);
 
     return player;
 }
@@ -798,8 +866,8 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
 function roundWin(user) {
     var winner = {};
 
-    if (game.useSQL && 1==2) {
-        var drawHistoryJSON = drawHistory;//JSON.stringify(drawHistory);
+    if (game.useSQL && game.playerStates.PLAYER && 1 == 2) {
+        var drawHistoryJSON = drawHistory; //JSON.stringify(drawHistory);
 
         var sql = "INSERT INTO BotWords SET ?";
         con.query(sql, {
@@ -915,43 +983,55 @@ function newRound() {
 
         sendWordToClient();
 
+        game.players.forEach(function(item){
+            if(item.state == game.playerStates.BOT){
+                setTimeout(function(){
+                    botGuess(item);
+                }, 1000);
+            }
+        });
+
         if (game.currentPlayer.state == game.playerStates.PLAYER) {
             io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
         } else if (game.currentPlayer.state == game.playerStates.BOT) {
-            botDraw();
+            setTimeout(function(){botDraw();}, 500);
         }
     }
 }
 
+function botGuess(player){
+    
+}
+
 function botDraw() {
-    console.log("botdraw");
+ 
     var timeCount = 0;
-    var intervalTick = 500;
+    var intervalTick = timers.TimerTick;
+    var dat = botDrawData.POINTS;
 
     timers.botDraw = setInterval(function () {
-        if (timeCount >= game.roundTimeout*1000) {
+        if (timeCount >= game.roundTimeout * 1000) {
             console.log("cleared");
             clearInterval(timers.botDraw);
         }
 
         var drawing = true;
-        
-        while(drawing && botDrawPoints[0].time <= timeCount){
-            
-            console.log();
-            var p = botDrawPoints.shift();
-            console.log(p);
-            if(botDrawPoints[0] == undefined){
+
+        while (drawing && dat[0].time <= timeCount) {
+
+
+            var p = dat.shift();
+            if (dat[0] == undefined) {
                 drawing = false;
-                botDrawPoints[0] = {time:0};
+                dat[0] = {
+                    time: 0
+                };
             } else {
                 io.emit('drawing', p);
             }
-            
-            console.log(drawing);
         }
 
-        timeCount += intervalTick/1000;
+        timeCount += intervalTick / 1000;
         console.log(timeCount);
     }, intervalTick);
 }
@@ -1009,6 +1089,7 @@ function findPlayerBySocket(socket) {
     return player;
 }
 
+
 function sendGameMode() {
     io.emit("gameMode", game.mode);
 }
@@ -1016,16 +1097,17 @@ function sendGameMode() {
 function roundTimer(time) {
     clearInterval(timers.roundTimer);
 
+    var tick = timers.TimerTick;
     timers.roundTimeLeft = time;
 
     timers.roundTimer = setInterval(function () {
-        timers.roundTimeLeft--;
+        timers.roundTimeLeft -= tick / 1000;
 
         if (timers.roundTimeLeft <= 0) {
             clearInterval(timers.roundTimer);
             roundWin("Nobody");
         }
-    }, 1000);
+    }, tick);
 
 }
 

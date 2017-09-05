@@ -264,3 +264,11 @@ a:active {
 #endGameButtonEndless {
     display: none;
 }
+
+#numBots {
+    margin-bottom:100px;
+}
+
+#numBotsContainer{
+    margin-bottom:10px;
+}

@@ -46,7 +46,7 @@ socket.on('drawing', onDrawingEvent);
 socket.on("init", function (data) {
     player = data;
 
-    if(!data.useSQL){
+    if (!data.useSQL) {
         statusMessage("danger", "SQL Cannot Connect - No Login Available!");
         $("#loginFields").hide();
     }
@@ -58,9 +58,9 @@ socket.on("init", function (data) {
     }
 
     username = data.username;
-  
-    //resetInterface();
 
+    //resetInterface();
+    $("#numBots").selectpicker('val', data.numBots);
 
     $("#modal-playerList").show();
 
@@ -92,7 +92,11 @@ socket.on('reconnecting', function () {
 
 //listens for chat message feedback from server.
 socket.on('chatMessage', function (msg) {
-    AddChatMessage(messageType.REG, msg.text);
+    if(msg.status == undefined){
+        msg.status = messageType.REG;
+    }
+
+    AddChatMessage(msg.status, msg.text);
 });
 
 //listens for user count updates
@@ -114,7 +118,7 @@ socket.on("playerAddedStart", function (data) {
     var t = player;
     var players = data.list;
     var playerPlayerCount = data.playerCount;
-   
+
     players.forEach(function (player) {
         var medals = "";
         for (x = 0; x < player.wins; x++) {
@@ -130,7 +134,7 @@ socket.on("playerAddedStart", function (data) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
             } else if (player.state == game.playerStates.SPECTATOR) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-warning">' + player.username + " " + medals + '</li>');
-            } else if(player.state == game.playerStates.BOT) {
+            } else if (player.state == game.playerStates.BOT) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
             }
 
@@ -139,7 +143,7 @@ socket.on("playerAddedStart", function (data) {
         }
     });
 
-    if(playerPlayerCount >= 2){
+    if (playerPlayerCount >= 2 && player.ready) {
         $("#startGameButtonEndless").prop("disabled", false);
         $("#startGameButton").prop("disabled", false);
     } else {
@@ -193,7 +197,7 @@ socket.on("roundWin", function (data) {
 //listens for next player update
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
-
+    //do report button with data.state == game.playerStates.BOT
     $("#pn").attr("src", data.cursor);
 
     notMyTurn(false);
@@ -293,13 +297,17 @@ socket.on("gameMode", function (mode) {
 });
 
 socket.on("login", function (data) {
-   
+
     if (data.result) {
         var c = data.secret;
         document.cookie = "c=" + c;
         location.reload();
     }
 
+});
+
+socket.on("numBotsChanged", function(data){
+    $('#numBots').selectpicker('val', data);
 });
 
 socket.on("registerSuccess", function (data) {
@@ -313,15 +321,15 @@ socket.on("registerSuccess", function (data) {
             statusMessage("success", "Settings Updated");
         } else {
             statusMessage("success", "Success -- Please login");
-             //$('#statusMessage').text("Success -- Please login").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
+            //$('#statusMessage').text("Success -- Please login").addClass( "alert alert-success" ).show().delay(5000).fadeOut('slow');
         }
     } else {
         if (player.loggedIn) {
             statusMessage("danger", "Error! Settings Not Saved!");
-             //$('#statusMessage').text("Settings not Saved").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
+            //$('#statusMessage').text("Settings not Saved").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
         } else {
             statusMessage("danger", "Use a different Username!");
-             //$('#statusMessage').text("Use a different Username").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
+            //$('#statusMessage').text("Use a different Username").addClass( "alert alert-danger" ).show().delay(5000).fadeOut('slow');
         }
     }
 });
@@ -425,11 +433,10 @@ $(document).ready(function () {
     $('#ready').change(function () {
         socket.emit("playerReady", $(this).prop('checked'));
         player.ready = $(this).prop('checked');
+       
+
     });
 
-    $("#addBot").click(function(){
-        socket.emit("addBot");
-    });
 
     $('#spectate').change(function () {
         socket.emit("playerPlayer", $(this).prop('checked'));
@@ -500,6 +507,11 @@ $(document).ready(function () {
             $("#modal-login-password").val("");
         }
 
+    });
+
+    $('#numBots').on('changed.bs.select', function (e,i) {
+   
+        socket.emit("numBotsChanged", i);
     });
 
 });
@@ -611,6 +623,6 @@ function toggleReady(ready) {
     else $('#ready').bootstrapToggle('off');
 }
 
-function statusMessage(status, text){
-    $('#statusMessage').removeClass("alert alert-success").removeClass("alert alert-danger").addClass("alert alert-"+status).text(text).show().delay(5000).fadeOut('slow');
+function statusMessage(status, text) {
+    $('#statusMessage').removeClass("alert alert-success").removeClass("alert alert-danger").addClass("alert alert-" + status).text(text).show().delay(5000).fadeOut('slow');
 }
