@@ -865,9 +865,9 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
 //handles when a round is won.  Sends winner stuff to client
 function roundWin(user) {
     var winner = {};
-
-    if (game.useSQL && game.playerStates.PLAYER && 1 == 2) {
-        var drawHistoryJSON = drawHistory; //JSON.stringify(drawHistory);
+    
+    if (user != "Nobody" && game.useSQL && game.currentPlayer == game.playerStates.PLAYER) {
+        var drawHistoryJSON = JSON.stringify(drawHistory);
 
         var sql = "INSERT INTO BotWords SET ?";
         con.query(sql, {
@@ -1000,7 +1000,7 @@ function newRound() {
 }
 
 function botGuess(player){
-    
+
 }
 
 function botDraw() {
