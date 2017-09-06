@@ -941,7 +941,6 @@ function botGuess(player) {
 
         if (timeCount >= game.roundTimeout) {
             clearInterval(c);
-            console.log("cleared");
         }
 
         var r = Math.floor(Math.random() * (timers.roundTimeLeft * 3));
@@ -1101,7 +1100,7 @@ function roundTimer(time) {
 
     timers.roundTimer = setInterval(function () {
         timers.roundTimeLeft -= tick / 1000;
-        console.log(timers.roundTimeLeft);
+
         if (timers.roundTimeLeft <= 0) {
             clearInterval(timers.roundTimer);
             roundWin("Nobody");
