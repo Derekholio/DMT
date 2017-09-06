@@ -784,7 +784,7 @@ function roundWin(user) {
             "WORD": game.currentWordSolved,
             "POINTS": drawHistoryJSON
         }, function (err, result) {
-            console.log(sql);
+     
             if (err) throw err;
 
         });
@@ -921,7 +921,7 @@ function botDraw() {
 
     timers.botDraw = setInterval(function () {
         if (timeCount >= game.roundTimeout * 1000) {
-            console.log("cleared");
+
             clearInterval(timers.botDraw);
         }
 
@@ -942,7 +942,6 @@ function botDraw() {
         }
 
         timeCount += intervalTick / 1000;
-        console.log(timeCount);
     }, intervalTick);
 }
 
