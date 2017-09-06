@@ -108,6 +108,9 @@ function onDrawingEvent(data) {
     var h = canvas.self.height;
     canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
     
+    if(game.drawer.state == game.playerStates.BOT){
+        moveCursor(data.x1*w, data.y1*h);
+    }
     //moveCursor(data.x1*w, data.y1*h);
 }
 

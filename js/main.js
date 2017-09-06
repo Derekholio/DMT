@@ -13,6 +13,7 @@ var scrollerHeight = 900;
 var player = {ready: false};
 
 var game = {
+    drawer: {},
     modes: {
         "REGULAR": 1,
         "ENDLESS": 2
@@ -205,7 +206,8 @@ socket.on("roundWin", function (data) {
 //listens for next player update
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
-
+    game.drawer.state = data.state;
+    
     if(data.state == game.playerStates.BOT && game.useSQL){
         $("#reportDrawing").show();
     } else {
@@ -471,7 +473,7 @@ $(document).ready(function () {
         if ($(this).prop('checked')) {
             player.state = game.playerStates.PLAYER;
         } else {
-            player.state = game.playerStates.BOT;
+            player.state = game.playerStates.SPECTATOR;
         }
     });
 
