@@ -52,6 +52,8 @@ socket.on("init", function (data) {
     if (!data.useSQL) {
         statusMessage("danger", "SQL Cannot Connect - No Login Available!");
         $("#loginFields").hide();
+    } else {
+        $("#loginFields").show();
     }
 
     if (player.loggedIn) {
@@ -203,6 +205,13 @@ socket.on("roundWin", function (data) {
 //listens for next player update
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
+
+    if(data.state == game.playerStates.BOT && game.useSQL){
+        $("#reportDrawing").show();
+    } else {
+        $("#reportDrawing").hide();
+    }
+
     //do report button with data.state == game.playerStates.BOT
     $("#pn").attr("src", data.cursor);
 
@@ -421,6 +430,12 @@ $(document).ready(function () {
         socket.emit("startGame", {
             gameMode: game.modes.REGULAR
         });
+    });
+
+    $("#reportDrawing").click(function(){
+        $("#reportDrawing").hide();
+
+        socket.emit("reportDrawing");
     });
 
     //start game button handler for endless

@@ -343,6 +343,15 @@ io.on('connection', function (socket) {
 
     });
 
+    socket.on("reportDrawing", function () {
+        if (botDrawData.ID && game.useSQL) {
+            var sql = "UPDATE BotWords SET REPORTS = LAST_INSERT_ID(REPORTS)+1 WHERE ID = ?";
+            con.query(sql, [botDrawData.ID], function (err, result) {
+                if (err) throw err;
+            });
+        }
+    });
+
     socket.on("updatePlayerSettings", function (data) {
         if (!game.useSQL) {
             return;
@@ -932,12 +941,12 @@ function botGuess(player) {
             clearInterval(c);
             console.log("cleared");
         }
-        
-        var r = Math.floor(Math.random()*(timers.roundTimeLeft*3));
 
-        if(r == 1){
+        var r = Math.floor(Math.random() * (timers.roundTimeLeft * 3));
+
+        if (r == 1) {
             chatMessage(game.currentWordSolved, null, p);
-        } else if(r > timers.roundTimeLeft*2.9){
+        } else if (r > timers.roundTimeLeft * 2.95) {
 
             var guess = Sentencer.make("{{noun}}");
             chatMessage(guess, null, p);
@@ -962,20 +971,23 @@ function botDraw() {
 
         var drawing = true;
 
-        while (drawing && dat[0].time <= timeCount) {
+        if (dat) {
+            while (drawing && dat[0].time <= timeCount) {
 
-            var p = dat.shift();
-            if (dat[0] == undefined) {
-                drawing = false;
-                dat[0] = {
-                    time: 0
-                };
-            } else {
-                io.emit('drawing', p);
+                var p = dat.shift();
+                if (dat[0] == undefined) {
+                    drawing = false;
+                    dat[0] = {
+                        time: 0
+                    };
+                } else {
+                    io.emit('drawing', p);
+                }
             }
         }
 
     }, intervalTick);
+
 }
 
 

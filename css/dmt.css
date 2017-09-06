@@ -272,3 +272,11 @@ a:active {
 #numBotsContainer{
     margin-bottom:10px;
 }
+
+#reportDrawing{
+    display:none;
+}
+
+#loginFields {
+    display:none;
+}
