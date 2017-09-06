@@ -88,6 +88,7 @@ socket.on("init", function (data) {
 //listens if we get disconnected from server
 socket.on('disconnect', function () {
     AddChatMessage(messageType.BOLD, "Disconnected From Server!");
+    location.reload();
 });
 
 //listens if we are attempting to reconnect to server

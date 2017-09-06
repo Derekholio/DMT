@@ -41,6 +41,8 @@ var botDrawData = {};
 
 //Game Object
 var game = {
+    guesserPoints: 10,
+    drawerPoints: 5,
     useSQL: false,
     inProgress: false,
     players: [],
@@ -69,7 +71,8 @@ var timers = {
     letterTimer: null,
     roundTimeLeft: 0,
     botDraw: 0,
-    TimerTick: 250
+    botGuess: [],
+    TimerTick: 100
 };
 
 var messageType = {
@@ -147,7 +150,7 @@ io.on('connection', function (socket) {
             sendServerChatMessage("Cannot add bots at this time! ERR: NOSQL");
         }
     });
-    
+
     //clears canvas event (cls button)
     socket.on("clearScreen", function () {
         io.emit("clearScreen");
@@ -183,21 +186,21 @@ io.on('connection', function (socket) {
 
 
         game.players.forEach(function (item, i) {
-            
+
             if (item.state == game.playerStates.BOT) {
 
             } else {
                 tmp.push(item);
             }
         });
-        
+
         game.players = tmp;
 
-        for(x = 0; x<data; x++){
-            makePlayer(null,null,game.playerStates.BOT);
+        for (x = 0; x < data; x++) {
+            makePlayer(null, null, game.playerStates.BOT);
         }
 
-        if(data == 0){
+        if (data == 0) {
             sendPlayersList();
         }
 
@@ -229,6 +232,8 @@ io.on('connection', function (socket) {
 
         }
     });
+
+
 
     //on client disconnect.  removes player and updates player list
     socket.on('disconnect', function () {
@@ -682,7 +687,7 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
         player.socket = socket.id;
 
     } else {
-        player.username = player.username + " (bot)";
+        player.username = "(bot) " + player.username;
         player.ready = true;
         sin = 0;
     }
@@ -776,7 +781,7 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
 function roundWin(user) {
     var winner = {};
 
-    if (user != "Nobody" && game.useSQL && game.currentPlayer.state == game.playerStates.PLAYER) {
+    if (user != "Nobody" && game.useSQL && game.currentPlayer.state == game.playerStates.PLAYER && drawHistory.length >= 30) {
         var drawHistoryJSON = JSON.stringify(drawHistory);
 
         var sql = "INSERT INTO BotWords SET ?";
@@ -784,7 +789,7 @@ function roundWin(user) {
             "WORD": game.currentWordSolved,
             "POINTS": drawHistoryJSON
         }, function (err, result) {
-     
+
             if (err) throw err;
 
         });
@@ -793,9 +798,9 @@ function roundWin(user) {
     if (user != "Nobody") {
         //winner = findPlayerByUsername(username);
         winner = user;
-        winner.points += 10;
+        winner.points += game.guesserPoints;
 
-        game.currentPlayer.points += 5;
+        game.currentPlayer.points += game.drawerPoints;
 
     } else {
         winner = {
@@ -820,6 +825,13 @@ function clearTimers() {
     clearTimeout(timers.roundTimer);
     clearTimeout(timers.letterTimer);
     clearTimeout(timers.botDraw);
+
+    timers.botGuess.forEach(function (timer) {
+        clearTimeout(timer);
+        timer = null;
+    });
+
+    timers.botGuess = [];
 }
 
 
@@ -893,9 +905,9 @@ function newRound() {
 
         sendWordToClient();
 
-        game.players.forEach(function(item){
-            if(item.state == game.playerStates.BOT){
-                setTimeout(function(){
+        game.players.forEach(function (item) {
+            if (item.state == game.playerStates.BOT) {
+                setTimeout(function () {
                     botGuess(item);
                 }, 1000);
             }
@@ -904,31 +916,49 @@ function newRound() {
         if (game.currentPlayer.state == game.playerStates.PLAYER) {
             io.sockets.connected[game.currentPlayer.socket].emit('wordUpdateSolved', game.currentWordSolved.toUpperCase());
         } else if (game.currentPlayer.state == game.playerStates.BOT) {
-            setTimeout(function(){botDraw();}, 500);
+            setTimeout(function () {
+                botDraw();
+            }, 500);
         }
     }
 }
 
-function botGuess(player){
+function botGuess(player) {
+    var p = player;
+    var c = setInterval(function () {
+        var timeCount = game.roundTimeout - timers.roundTimeLeft;
 
+        if (timeCount >= game.roundTimeout) {
+            clearInterval(c);
+            console.log("cleared");
+        }
+        var r = Math.floor(Math.random()*50);
+        console.log(r);
+
+        if(r == 5){
+            chatMessage(game.currentWordSolved, null, p);
+        }
+        
+    }, 1000);
+
+    timers.botGuess.push(c);
 }
 
 function botDraw() {
- 
-    var timeCount = 0;
+
     var intervalTick = timers.TimerTick;
     var dat = botDrawData.POINTS;
 
     timers.botDraw = setInterval(function () {
-        if (timeCount >= game.roundTimeout * 1000) {
+        var timeCount = game.roundTimeout - timers.roundTimeLeft;
 
+        if (timeCount >= game.roundTimeout) {
             clearInterval(timers.botDraw);
         }
 
         var drawing = true;
 
         while (drawing && dat[0].time <= timeCount) {
-
 
             var p = dat.shift();
             if (dat[0] == undefined) {
@@ -941,7 +971,6 @@ function botDraw() {
             }
         }
 
-        timeCount += intervalTick / 1000;
     }, intervalTick);
 }
 
@@ -968,6 +997,49 @@ function guessLetter() {
                 }
             }
         }
+    }
+}
+
+function chatMessage(msg, socket = null, p = null) {
+
+    if (!msg.text && p) {
+        msg = {
+            text: msg,
+            username: p.username
+        };
+    } else if (!msg.text) {
+        msg = {
+            text: msg
+        };
+    }
+
+    if (socket) {
+        console.log("[" + socket.id + "] [CHAT MESSAGE]: ", msg);
+    } else {
+        console.log("[BOT] [CHAT MESSAGE]: ", msg);
+    }
+
+    if (msg.text.length > 0) {
+        var g = msg.text;
+        var status = "";
+
+        if (!p) {
+            p = findPlayerBySocket(socket);
+        }
+
+        if (p.state == game.playerStates.SPECTATOR && game.inProgress) {
+            status = "(SPECTATOR)";
+        } else if (p.state == game.playerStates.SPECTATOR && game.inProgress && !p.isPlaying) {
+            status = "(SPECTATOR)";
+        }
+
+        msg.text = status + p.username + ": " + msg.text;
+        io.emit('chatMessage', msg);
+
+        if (game.inProgress && p.isPlaying) {
+            doGuess(g, p);
+        }
+
     }
 }
 
