@@ -932,10 +932,15 @@ function botGuess(player) {
             clearInterval(c);
             console.log("cleared");
         }
-        var r = Math.floor(Math.random()*100);
+        
+        var r = Math.floor(Math.random()*(timers.roundTimeLeft*3));
 
-        if(r == 5 && timeCount >= 20){
+        if(r == 1){
             chatMessage(game.currentWordSolved, null, p);
+        } else if(r > timers.roundTimeLeft*2.9){
+
+            var guess = Sentencer.make("{{noun}}");
+            chatMessage(guess, null, p);
         }
 
     }, 1000);
