@@ -434,7 +434,7 @@ $(document).ready(function () {
 
     $("#reportDrawing").click(function(){
         $("#reportDrawing").hide();
-
+        AddChatMessage(messageType.BOLD, "(Server): Drawing has been reported");
         socket.emit("reportDrawing");
     });
 
