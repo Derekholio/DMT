@@ -72,7 +72,7 @@ var timers = {
     roundTimeLeft: 0,
     botDraw: 0,
     botGuess: [],
-    TimerTick: 100
+    TimerTick: 250
 };
 
 var messageType = {
@@ -946,7 +946,7 @@ function botGuess(player) {
 
         var r = Math.floor(Math.random() * (timers.roundTimeLeft * 3));
 
-        if (r == 1) {
+        if (r == 1 && timeCount > 20 && times.roundTimeLeft < 5) {
             chatMessage(game.currentWordSolved, null, p);
         } else if (r > timers.roundTimeLeft * 2.95) {
 
@@ -1101,7 +1101,7 @@ function roundTimer(time) {
 
     timers.roundTimer = setInterval(function () {
         timers.roundTimeLeft -= tick / 1000;
-
+        console.log(timers.roundTimeLeft);
         if (timers.roundTimeLeft <= 0) {
             clearInterval(timers.roundTimer);
             roundWin("Nobody");
