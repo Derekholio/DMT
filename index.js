@@ -932,13 +932,12 @@ function botGuess(player) {
             clearInterval(c);
             console.log("cleared");
         }
-        var r = Math.floor(Math.random()*50);
-        console.log(r);
+        var r = Math.floor(Math.random()*100);
 
-        if(r == 5){
+        if(r == 5 && timeCount >= 20){
             chatMessage(game.currentWordSolved, null, p);
         }
-        
+
     }, 1000);
 
     timers.botGuess.push(c);
