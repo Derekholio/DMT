@@ -10,7 +10,7 @@ var myTurn = false;
 var userCount;
 var timer;
 var scrollerHeight = 900;
-var player = null;
+var player = {ready: false};
 
 var game = {
     modes: {
@@ -31,7 +31,10 @@ var messageType = {
 };
 
 socket.on('connect', function () {
-    //toggleReady(false);
+    player.ready = false;
+    //$('#ready').bootstrapToggle('off');
+    $('#joinGame').prop("disabled", true);
+
     var c = getCookieValue("c");
     socket.emit("init", {
         c: c
@@ -77,6 +80,8 @@ socket.on("init", function (data) {
 
         $("#startButtons").show();
     }
+
+    toggleReady(false);
 });
 
 
@@ -356,6 +361,7 @@ socket.on("winner", function (winner) {
 //on local page load
 $(document).ready(function () {
 
+
     //Loads All Canvas Variables and EVents (DRAWING)
     loadCanvas(document.getElementById("canvas"));
 
@@ -434,6 +440,11 @@ $(document).ready(function () {
         socket.emit("playerReady", $(this).prop('checked'));
         player.ready = $(this).prop('checked');
        
+        if ($(this).prop('checked')) {
+            $("#joinGame").prop("disabled", false);
+        } else {
+            $("#joinGame").prop("disabled", true);
+        }
 
     });
 
@@ -442,9 +453,9 @@ $(document).ready(function () {
         socket.emit("playerPlayer", $(this).prop('checked'));
 
         if ($(this).prop('checked')) {
-            player.state = "player";
+            player.state = game.playerStates.PLAYER;
         } else {
-            player.state = "spectator";
+            player.state = game.playerStates.BOT;
         }
     });
 
@@ -585,7 +596,7 @@ function countDownTimer(time) {
     timer = setInterval(function () {
         timeleft--;
 
-        $("#timer").text(timeleft);
+        $("#timer").text(Math.floor(timeleft));
 
         if (timeleft <= 15) {
             $("#timer").effect("shake", {
@@ -619,8 +630,8 @@ function getCookieValue(a) {
 
 
 function toggleReady(ready) {
-    if (ready) $('#ready').bootstrapToggle('on');
-    else $('#ready').bootstrapToggle('off');
+    if (ready){ $('#ready').bootstrapToggle('on'); player.ready = true;}
+    else {$('#ready').bootstrapToggle('off');player.ready = false;}
 }
 
 function statusMessage(status, text) {

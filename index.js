@@ -147,97 +147,7 @@ io.on('connection', function (socket) {
             sendServerChatMessage("Cannot add bots at this time! ERR: NOSQL");
         }
     });
-    /* socket.on("init", function (data) {
-         //setsup temporary player object
-
-         var player = {
-             username: Sentencer.make("{{adjective}} {{noun}}"),
-             socket: socket.id,
-             isPlaying: false,
-             hasDrawn: false,
-             drawing: false,
-             points: 0,
-             wins: 0,
-             cursor: getRandomCursor(),
-             ready: false,
-             state: game.playerStates.PLAYER,
-             loggedIn: false
-         };
-
-         if (data.c != null && game.useSQL) {
-             var sql = "SELECT * FROM users WHERE SECRET = ?";
-             con.query(sql, [data.c], function (err, result) {
-                 if (err) throw err;
-                 if (result.length > 0) {
-                     var p = result[0].USERNAME;
-                     var f = false;
-                     game.players.forEach(function (item) {
-                         if (p == item.username) {
-                             f = true;
-                         }
-                     });
-
-                     if (!f) {
-                         player.loggedIn = true;
-
-                         player.username = result[0].USERNAME;
-                         player.wins = result[0].WINS;
-                         player.cursor = result[0].CURSORS;
-                     }
-                 }
-             });
-         }
-
-         setTimeout(function () {
-             //asynch gods forgive me
-
-             var initPayload = {
-                 username: player.username,
-                 inProgress: game.inProgress,
-                 ready: player.ready,
-                 loggedIn: player.loggedIn,
-                 cursor: player.cursor,
-                 useSQL: game.useSQL
-             };
-
-             var msg = {
-                 text: player.username + " joined the game!"
-             };
-
-             if (game.inProgress) {
-                 if (game.mode == game.modes.ENDLESS) {
-                     //player.isPlaying = true;
-                 } else {
-                     msg = {
-                         text: player.username + " joined the game! (SPECTATING)"
-                     };
-                 }
-
-                 initPayload.roundTimeLeft = timers.roundTimeLeft;
-                 initPayload.cursor = game.currentPlayer.cursor;
-
-                 socket.emit('init', initPayload);
-                 sendWordToClient();
-                 sendGameMode();
-
-             } else {
-                 //player.isPlaying = true;
-                 socket.emit('init', initPayload);
-             }
-
-             io.emit("chatMessage", msg);
-             game.players.push(player);
-             sendPlayersList();
-
-             //emits usercount to be displayed on page.  May replace with inital start payload
-             io.emit('userCount', userCount);
-
-
-             //forgive me father for I have sinned 
-         }, 500);
-
-     });*/
-
+    
     //clears canvas event (cls button)
     socket.on("clearScreen", function () {
         io.emit("clearScreen");
@@ -865,8 +775,8 @@ function makePlayer(data, socket = null, state = game.playerStates.PLAYER) {
 //handles when a round is won.  Sends winner stuff to client
 function roundWin(user) {
     var winner = {};
-    
-    if (user != "Nobody" && game.useSQL && game.currentPlayer == game.playerStates.PLAYER) {
+
+    if (user != "Nobody" && game.useSQL && game.currentPlayer.state == game.playerStates.PLAYER) {
         var drawHistoryJSON = JSON.stringify(drawHistory);
 
         var sql = "INSERT INTO BotWords SET ?";
