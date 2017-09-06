@@ -209,7 +209,9 @@ io.on('connection', function (socket) {
 
     //on message from chat
     socket.on('chatMessage', function (msg) {
+        chatMessage(msg, socket);
 
+/*
         console.log("[" + socket.id + "] [CHAT MESSAGE]: ", msg);
 
         if (msg.text.length > 0) {
@@ -230,7 +232,7 @@ io.on('connection', function (socket) {
                 doGuess(g, p);
             }
 
-        }
+        }*/
     });
 
 
