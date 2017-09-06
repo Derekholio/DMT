@@ -1042,7 +1042,12 @@ function chatMessage(msg, socket = null, p = null) {
 
         if (!p) {
             p = findPlayerBySocket(socket);
+
+            if(!p) {
+                return;
+            }
         }
+
 
         if (p.state == game.playerStates.SPECTATOR && game.inProgress) {
             status = "(SPECTATOR)";
@@ -1076,7 +1081,7 @@ function findPlayerByUsername(username) {
 
 //finds players by their socket id
 function findPlayerBySocket(socket) {
-    var player;
+    var player = null;
 
     game.players.forEach(function (item) {
         if (socket.id == item.socket) {

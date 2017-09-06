@@ -33,6 +33,9 @@ var messageType = {
 
 socket.on('connect', function () {
     player.ready = false;
+
+    $('#ready').bootstrapToggle('enable');
+    $('#spectate').bootstrapToggle('enable');
     //$('#ready').bootstrapToggle('off');
     $('#joinGame').prop("disabled", true);
 
@@ -207,7 +210,7 @@ socket.on("roundWin", function (data) {
 socket.on("nextTurnPlayer", function (data) {
     AddChatMessage(messageType.RED, "It's " + data.who + "'s turn to draw!");
     game.drawer.state = data.state;
-    
+
     if(data.state == game.playerStates.BOT && game.useSQL){
         $("#reportDrawing").show();
     } else {
@@ -379,8 +382,11 @@ $(document).ready(function () {
 
     $('#ready').bootstrapToggle('off');
     $('#spectate').bootstrapToggle('on');
+        $('#ready').bootstrapToggle('disable');
+    $('#spectate').bootstrapToggle('disable');
 
     $("#colorWheel").farbtastic(colorCallback);
+
 
     $('#penSize').on('change', function () {
         canvas.current.lineWidth = this.value;
