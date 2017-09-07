@@ -37,14 +37,14 @@ var canvas = {
         });
     },
 
-    clearScreen: function(){
+    clearScreen: function () {
         this.context.clearRect(0, 0, this.self.width, this.self.height);
         //socket.emit("clearScreen");
     },
 
-    fillScreen:function(color){
+    fillScreen: function (color) {
         this.context.fillStyle = color;
-        this.context.fillRect(0,0, this.self.width, this.self.height);
+        this.context.fillRect(0, 0, this.self.width, this.self.height);
     }
 
 
@@ -92,12 +92,20 @@ function onMouseMove(e) {
         return;
     }
 
+    resetIdleTimer();
+
     var w = canvas.self.width;
     var h = canvas.self.height;
-    socket.emit("drawerMouseMove", {"x": (e.clientX - canvas.mouseXOffset)/w, "y":(e.clientY - canvas.mouseYOffset)/h});
+
+    socket.emit("drawerMouseMove", {
+        "x": (e.clientX - canvas.mouseXOffset) / w,
+        "y": (e.clientY - canvas.mouseYOffset) / h
+    });
+
     if (!canvas.isDrawing) {
         return;
     }
+    
     canvas.drawLine(canvas.current.x - canvas.mouseXOffset, canvas.current.y - canvas.mouseYOffset, e.clientX - canvas.mouseXOffset, e.clientY - canvas.mouseYOffset, canvas.current.color, canvas.current.lineWidth, true);
     canvas.current.x = e.clientX;
     canvas.current.y = e.clientY;
@@ -107,21 +115,21 @@ function onDrawingEvent(data) {
     var w = canvas.self.width;
     var h = canvas.self.height;
 
-    if(data == 0){
+    if (data == 0) {
         canvas.clearScreen();
     } else {
         canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
     }
-    
-    if(game.drawer.state == game.playerStates.BOT){
-        moveCursor(data.x1*w, data.y1*h);
+
+    if (game.drawer.state == game.playerStates.BOT) {
+        moveCursor(data.x1 * w, data.y1 * h);
     }
     //moveCursor(data.x1*w, data.y1*h);
 }
 
 function onColorUpdate(e) {
     var tar = e.target.className.split(' ')[2];
-  
+
     if (tar == "plus") {
         canvas.current.lineWidth += 2;
     } else if (tar == "minus") {
@@ -164,10 +172,13 @@ function loadCanvas(el) {
     //window.addEventListener("resize", onResize);
 
 
-} 
+}
 
-function moveCursor(x, y){
+function moveCursor(x, y) {
 
     var h = $("#pn").height();
-    $("#pn").css({top: y-canvas.self.height, left: x});
+    $("#pn").css({
+        top: y - canvas.self.height,
+        left: x
+    });
 }

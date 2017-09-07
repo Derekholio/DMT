@@ -162,6 +162,10 @@ io.on('connection', function (socket) {
         endGame();
     });
 
+    socket.on("drawerIdle", function(){
+        roundWin("Nobody");
+    });
+
     socket.on("joinGame", function () {
         if (game.inProgress) {
             if (game.mode == game.modes.ENDLESS) {

@@ -11,6 +11,8 @@ var userCount;
 var timer;
 var scrollerHeight = 900;
 var player = {ready: false};
+var idleTimer = null;
+var idleTimeout = 30;
 
 var game = {
     drawer: {},
@@ -405,6 +407,9 @@ $(document).ready(function () {
     //handles chat input, non modal
     $('#chatInputForm').submit(function (event) {
         event.preventDefault();
+
+        resetIdleTimer();
+
         var chatVal = $("#chatInput").val();
         $("#chatInput").val("");
 
@@ -603,6 +608,7 @@ function notMyTurn(turn) {
         //$("#canvas").addClass("pencil");
         //$("#pn").hide();
         $("#pn").show();
+        resetIdleTimer();
     } else {
         $("#pn").show();
         $("#contextSelector").prop("disabled", true);
@@ -652,6 +658,17 @@ function getCookieValue(a) {
     return b ? b.pop() : null;
 }
 
+function resetIdleTimer(){
+    clearTimeout(idleTimer);
+    console.log("idle timer");
+
+    idleTimer = setTimeout(function(){
+        if(myTurn){
+            console.log("idle timer ERROR");
+            socket.emit("drawerIdle");
+        }
+    }, idleTimeout*1000);
+}
 
 function toggleReady(ready) {
     if (ready){ $('#ready').bootstrapToggle('on'); player.ready = true;}
