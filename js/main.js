@@ -319,7 +319,7 @@ socket.on("gameMode", function (mode) {
 });
 
 socket.on("login", function (data) {
-
+    console.log(data.result);
     if (data.result) {
         var c = data.secret;
         document.cookie = "c=" + c;
