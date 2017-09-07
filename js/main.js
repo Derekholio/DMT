@@ -153,16 +153,16 @@ socket.on("playerAddedStart", function (data) {
             }*/
 
             if (player.state == game.playerStates.PLAYER) {
-                $("#playersToStart").append($('<li class="list-group-item list-group-item-success">').text(player.username + " " + medals));
+                $("#playersToStart").append($('<li class="list-group-item list-group-item-success">').text(player.username).append(medals));
             } else if (player.state == game.playerStates.SPECTATOR) {
-                $("#playersToStart").append($('<li class="list-group-item list-group-item-warning">').text(player.username + " " + medals));
+                $("#playersToStart").append($('<li class="list-group-item list-group-item-warning">').text(player.username).append(medals));
             } else if (player.state == game.playerStates.BOT) {
-                $("#playersToStart").append($('<li class="list-group-item list-group-item-success">').text(player.username + " " + medals));
+                $("#playersToStart").append($('<li class="list-group-item list-group-item-success">').text(player.username).append(medals));
             }
 
         } else {
             //$("#playersToStart").append('<li class="list-group-item list-group-item-danger">' + player.username + " " + medals + '</li>');
-            $("#playersToStart").append($('<li class="list-group-item list-group-item-danger">').text(player.username + " " + medals));
+            $("#playersToStart").append($('<li class="list-group-item list-group-item-danger">').text(player.username).append(medals));
         }
     });
 
