@@ -143,17 +143,26 @@ socket.on("playerAddedStart", function (data) {
             player.username += " (me)";
         }
 
-        if (player.ready) {
+        if (player.ready) {/*
             if (player.state == game.playerStates.PLAYER) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
             } else if (player.state == game.playerStates.SPECTATOR) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-warning">' + player.username + " " + medals + '</li>');
             } else if (player.state == game.playerStates.BOT) {
                 $("#playersToStart").append('<li class="list-group-item list-group-item-success">' + player.username + " " + medals + '</li>');
+            }*/
+
+            if (player.state == game.playerStates.PLAYER) {
+                $("#playersToStart").append($('<li class="list-group-item list-group-item-success">').text(player.username + " " + medals));
+            } else if (player.state == game.playerStates.SPECTATOR) {
+                $("#playersToStart").append($('<li class="list-group-item list-group-item-warning">').text(player.username + " " + medals));
+            } else if (player.state == game.playerStates.BOT) {
+                $("#playersToStart").append($('<li class="list-group-item list-group-item-success">').text(player.username + " " + medals));
             }
 
         } else {
-            $("#playersToStart").append('<li class="list-group-item list-group-item-danger">' + player.username + " " + medals + '</li>');
+            //$("#playersToStart").append('<li class="list-group-item list-group-item-danger">' + player.username + " " + medals + '</li>');
+            $("#playersToStart").append($('<li class="list-group-item list-group-item-danger">').text(player.username + " " + medals));
         }
     });
 
@@ -319,7 +328,7 @@ socket.on("gameMode", function (mode) {
 });
 
 socket.on("login", function (data) {
-    console.log(data.result);
+    
     if (data.result) {
         var c = data.secret;
         document.cookie = "c=" + c;
