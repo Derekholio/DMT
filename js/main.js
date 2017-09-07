@@ -660,11 +660,10 @@ function getCookieValue(a) {
 
 function resetIdleTimer(){
     clearTimeout(idleTimer);
-    console.log("idle timer");
 
     idleTimer = setTimeout(function(){
         if(myTurn){
-            console.log("idle timer ERROR");
+            console.log("IDLE TIMEOUT!");
             socket.emit("drawerIdle");
         }
     }, idleTimeout*1000);
