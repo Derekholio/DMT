@@ -154,6 +154,7 @@ io.on('connection', function (socket) {
     //clears canvas event (cls button)
     socket.on("clearScreen", function () {
         io.emit("clearScreen");
+        drawHistory.push(0);
     });
 
     //forces end game
@@ -945,7 +946,7 @@ function botGuess(player) {
 
         var r = Math.floor(Math.random() * (timers.roundTimeLeft * 3));
 
-        if (r == 1 && timeCount > 20 && times.roundTimeLeft < 5) {
+        if (r == 1 && timeCount > 20 && timers.roundTimeLeft < 5) {
             chatMessage(game.currentWordSolved, null, p);
         } else if (r > timers.roundTimeLeft * 2.95) {
 

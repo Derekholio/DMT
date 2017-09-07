@@ -106,7 +106,12 @@ function onMouseMove(e) {
 function onDrawingEvent(data) {
     var w = canvas.self.width;
     var h = canvas.self.height;
-    canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
+
+    if(data == 0){
+        canvas.clearScreen();
+    } else {
+        canvas.drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.lineWidth, false);
+    }
     
     if(game.drawer.state == game.playerStates.BOT){
         moveCursor(data.x1*w, data.y1*h);
