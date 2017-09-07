@@ -668,10 +668,15 @@ function getNewWord() {
             if (err) throw err;
 
             game.currentWordSolved = result[0].WORD;
+
+            botDrawData.ID = null;
+            botDrawData.POINTS = null;
+
             var sqlp = new Function('return ' + result[0].POINTS)();
             botDrawData.ID = result[0].ID;
             botDrawData.POINTS = sqlp;
 
+            
             for (x = 0; x <= game.currentWordSolved.length - 1; x++) {
                 game.currentWord += "_";
             }
@@ -967,6 +972,9 @@ function botDraw() {
 
     var intervalTick = timers.TimerTick;
     var dat = botDrawData.POINTS;
+
+    
+
 
     timers.botDraw = setInterval(function () {
         var timeCount = game.roundTimeout - timers.roundTimeLeft;
