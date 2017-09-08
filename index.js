@@ -958,8 +958,34 @@ function botGuess(player) {
         if (r == 1 && timeCount > 20 && timers.roundTimeLeft < 5) {
             chatMessage(game.currentWordSolved, null, p);
         } else if (r > timers.roundTimeLeft * 2.95) {
+            
+            var allWords = require('sentencer')._nouns;
+            var possibleWords = [];
+            
+            var regex = "^";
+            
+            for(var i = 0; i < game.currentWord.length; i++){
+                if(game.currentWord[i] === "_"){
+                    regex += ".";
+                }else{
+                    regex += game.currentWord[i];
+                }
+            }
+            
+            regex += "$";
+            
+            var re = RegExp(regex);
+            for(var i = 0; i < allWords.length; i++){
+                
+                if(allWords[i] !== undefined){
+                    if(allWords[i].match(re)){
+                        possibleWords.push(allWords[i]);
+                    }
+                }
+            }
+            
+            var guess = possibleWords[Math.floor(Math.random()*possibleWords.length)];
 
-            var guess = Sentencer.make("{{noun}}");
             chatMessage(guess, null, p);
         }
 
