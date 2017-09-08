@@ -1,15 +1,11 @@
 //Node Variables
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http, {
-    'pingInterval': 1000,
-    'pingTimeout': 5000
-});
 var Sentencer = require("sentencer");
 var fs = require("fs");
 var mysql = require("mysql");
 var crypto = require('crypto');
-var port = process.env.PORT || 8080;
+
+var app = require('express')();
+var http = require('http').Server(app);
 
 var fileName = "./config.json";
 
@@ -19,6 +15,24 @@ try {
     console.log("Missing configuration file! (config.json)");
     throw err;
 }
+
+if(config.useSSL){
+    console.log("using https");
+    var sslCert = fs.readFileSync(config.pathToCert);
+    var sslKey = fs.readFileSync(config.pathToPrivateKey);
+    var credentials = require('crypto').createCredentials({key: sslKey, cert: sslCert});
+    http.setSecure(credentials);
+}
+
+
+var io = require('socket.io')(http, {
+    'pingInterval': 1000,
+    'pingTimeout': 5000
+});
+
+var port = process.env.PORT || 8080;
+
+
 
 var algorithm = config.algo;
 var algorithmPassword = config.algoPassword;

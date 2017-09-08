@@ -5,5 +5,8 @@
 	"db":"",
 	"table":"",
 	"algo":"aes-256-ctr",
-	"algoPassword":"pizza46fhr3"
+	"algoPassword":"pizza46fhr3",
+	"useSSL":false,
+	"pathToCert":"/var/path/to/cert.crt",
+	"pathToPrivateKey":"/var/path/to/private.key"
 }
